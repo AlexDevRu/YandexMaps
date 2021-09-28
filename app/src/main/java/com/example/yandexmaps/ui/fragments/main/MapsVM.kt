@@ -1,22 +1,34 @@
 package com.example.yandexmaps.ui.fragments.main
 
-import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.yandexmaps.R
+import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.yandex.mapkit.geometry.BoundingBox
 import com.yandex.mapkit.geometry.Point
-import com.yandex.mapkit.search.*
-import com.yandex.runtime.Error
-import com.yandex.runtime.network.NetworkError
-import com.yandex.runtime.network.RemoteError
 
 class MapsVM: ViewModel() {
 
-    var query = MutableLiveData<String>()
+    val query = MutableLiveData<String>()
 
-    var searchCenter = Point()
+    var userLocation = Point()
 
-    var suggestionsList = MutableLiveData<List<String?>>()
+    val suggestionsList = MutableLiveData<List<String?>>()
+
+    val searchResponse = MutableLiveData<SearchResponseModel>(null)
+
+    private val BOX_SIZE = 0.2
+
+    val boundingBox: BoundingBox
+        get() {
+            val lat = userLocation.latitude
+            val lng = userLocation.longitude
+
+            return BoundingBox(
+                Point(lat - BOX_SIZE, lng - BOX_SIZE),
+                Point(lat + BOX_SIZE, lng + BOX_SIZE)
+            )
+        }
+
+
+    var userAdded = false
 }

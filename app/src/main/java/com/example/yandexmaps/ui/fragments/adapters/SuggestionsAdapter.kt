@@ -7,14 +7,14 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.yandexmaps.databinding.ViewholderSuggestionBinding
 
-class SuggestionsAdapter(private val clickHandler: () -> Unit)
+class SuggestionsAdapter(private val clickHandler: (String) -> Unit)
     : ListAdapter<String, SuggestionsAdapter.SuggestionViewHolder>(SuggestionDiffUtil()){
 
     inner class SuggestionViewHolder(private val binding: ViewholderSuggestionBinding): RecyclerView.ViewHolder(binding.root) {
         fun bind(suggestion: String) {
             binding.suggestionTextView.text = suggestion
             binding.root.setOnClickListener {
-                clickHandler()
+                clickHandler(suggestion)
             }
         }
     }

@@ -5,19 +5,20 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
-import androidx.core.widget.addTextChangedListener
 import androidx.navigation.fragment.findNavController
 import com.example.yandexmaps.R
 import com.example.yandexmaps.databinding.FragmentSearchBinding
 import com.example.yandexmaps.ui.fragments.adapters.SuggestionsAdapter
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
-import com.yandex.mapkit.geometry.BoundingBox
+import com.example.yandexmaps.ui.models.SearchResponseModel
+import com.yandex.mapkit.geometry.Geometry
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.search.*
 import com.yandex.runtime.Error
 import com.yandex.runtime.network.NetworkError
 import com.yandex.runtime.network.RemoteError
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
+
 
 class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding::inflate) {
 
@@ -33,17 +34,16 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
     private lateinit var suggestSession: SuggestSession
     private lateinit var searchManager: SearchManager
 
-    private val BOX_SIZE = 0.2
-    private var CENTER = Point(55.75, 37.62)
-    private var BOUNDING_BOX = BoundingBox(
-        Point(CENTER.latitude - BOX_SIZE, CENTER.longitude - BOX_SIZE),
-        Point(CENTER.latitude + BOX_SIZE, CENTER.longitude + BOX_SIZE)
-    )
+
     private val SEARCH_OPTIONS = SuggestOptions().setSuggestTypes(
         SuggestType.GEO.value or
                 SuggestType.BIZ.value or
                 SuggestType.TRANSIT.value
     )
+
+
+    private lateinit var searchSession: Session
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -52,9 +52,7 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
         suggestSession = searchManager.createSuggestSession()
 
         suggestionsAdapter = SuggestionsAdapter {
-            /*val action = SearchFragmentDirections.actionSearchFragmentToMapsFragment()
-            findNavController().navigate(action)*/
-            findNavController().navigateUp()
+            searchByQuery(it)
         }
         binding.suggestResult.adapter = suggestionsAdapter
 
@@ -83,7 +81,7 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
     }
 
     private fun requestSuggest(query: String) {
-        suggestSession.suggest(query, BOUNDING_BOX, SEARCH_OPTIONS, object: SuggestSession.SuggestListener {
+        suggestSession.suggest(query, viewModel.boundingBox, SEARCH_OPTIONS, object: SuggestSession.SuggestListener {
             override fun onResponse(suggests: MutableList<SuggestItem>) {
                 Log.w(TAG,"suggests ${suggests}")
 
@@ -107,5 +105,42 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
                 Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
             }
         })
+    }
+
+    private fun searchByQuery(query: String) {
+        searchSession = searchManager.submit(
+            query,
+            Geometry.fromBoundingBox(viewModel.boundingBox),
+            SearchOptions(),
+            object: Session.SearchListener {
+                override fun onSearchResponse(response: Response) {
+                    viewModel.searchResponse.value = SearchResponseModel(response, 1)
+                    val action = SearchFragmentDirections.actionSearchFragmentToMapsFragment()
+                    findNavController().navigate(action)
+                }
+
+                override fun onSearchError(error: Error) {
+                    showSnackBar(error.toString())
+                }
+            }
+        )
+    }
+    private fun searchByQuery(point: Point) {
+        searchSession = searchManager.submit(
+            point,
+            11,
+            SearchOptions(),
+            object: Session.SearchListener {
+                override fun onSearchResponse(response: Response) {
+                    viewModel.searchResponse.value = SearchResponseModel(response)
+                    val action = SearchFragmentDirections.actionSearchFragmentToMapsFragment()
+                    findNavController().navigate(action)
+                }
+
+                override fun onSearchError(error: Error) {
+                    showSnackBar(error.toString())
+                }
+            }
+        )
     }
 }
