@@ -10,6 +10,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.navigation.fragment.findNavController
 import com.example.yandexmaps.R
+import com.example.yandexmaps.args.toArg
+import com.example.yandexmaps.args.toModel
 import com.example.yandexmaps.databinding.FragmentMapsBinding
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
 import com.yandex.mapkit.Animation
@@ -26,9 +28,12 @@ import com.yandex.mapkit.logo.HorizontalAlignment
 import com.yandex.mapkit.logo.VerticalAlignment
 import com.yandex.mapkit.map.*
 import com.yandex.mapkit.map.Map
+import com.yandex.mapkit.places.PlacesFactory
+import com.yandex.mapkit.places.panorama.PanoramaService
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
+import com.yandex.runtime.Error
 import com.yandex.runtime.image.ImageProvider
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
@@ -43,22 +48,27 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
     private lateinit var userLocationLayer: UserLocationLayer
 
+    private lateinit var panoramaService: PanoramaService
+
     private val cameraListener = CameraListener { _, _, _, _ ->
         userLocationLayer.resetAnchor()
         Log.d(TAG, "camera position")
     }
 
     private val inputListener = object: InputListener {
-        override fun onMapTap(map: Map, point: Point) {
+        override fun onMapTap(p0: Map, p1: Point) {
             binding.mapview.map.deselectGeoObject()
+            viewModel.selectedGeoObject.value = null
         }
 
-        override fun onMapLongTap(map: Map, point: Point) {
-
+        override fun onMapLongTap(p0: Map, p1: Point) {
+            TODO("Not yet implemented")
         }
     }
 
     private val geoObjectTapListener = GeoObjectTapListener {
+        viewModel.selectedGeoObject.value = it.geoObject
+
         val selectionMetadata = it.geoObject
             .metadataContainer
             .getItem(GeoObjectSelectionMetadata::class.java)
@@ -80,6 +90,16 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
             Log.w(TAG, "lat=${lat} " + "lon=${lng}")
             viewModel.userLocation = location.position
+        }
+    }
+
+    private val panoramaListener = object: PanoramaService.SearchListener {
+        override fun onPanoramaSearchResult(p0: String) {
+            binding.panoramaButton.visibility = View.VISIBLE
+        }
+
+        override fun onPanoramaSearchError(p0: Error) {
+            binding.panoramaButton.visibility = View.GONE
         }
     }
 
@@ -108,6 +128,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         userLocationLayer.isAutoZoomEnabled = true
 
         userLocationLayer.setObjectListener(this)
+
+        panoramaService = PlacesFactory.getInstance().createPanoramaService()
     }
 
     private fun initViews() {
@@ -145,6 +167,15 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 Animation(Animation.Type.SMOOTH, 2f),
                 null
             )
+        }
+
+        binding.panoramaButton.setOnClickListener {
+            val point = viewModel.selectedGeoObject.value?.geometry?.getOrNull(0)?.point
+
+            if(point != null) {
+                val action = MapsFragmentDirections.actionMapsFragmentToPanoramaFragment(point.toArg())
+                findNavController().navigate(action)
+            }
         }
 
         observe()
@@ -191,6 +222,18 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 val point = it.obj?.geometry?.get(0)?.point
                 if(point != null)
                     binding.mapview.mapWindow.map.move(CameraPosition(point, 11f, 0f, 0f))
+            }
+        }
+
+        viewModel.selectedGeoObject.observe(viewLifecycleOwner) {
+            if(it != null) {
+                val point = viewModel.selectedGeoObject.value?.geometry?.getOrNull(0)?.point
+                if(point != null)
+                    panoramaService.findNearest(point, panoramaListener)
+                else
+                    binding.panoramaButton.visibility = View.GONE
+            } else {
+                binding.panoramaButton.visibility = View.GONE
             }
         }
     }

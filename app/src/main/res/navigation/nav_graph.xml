@@ -15,10 +15,17 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right"/>
+        <action
+            android:id="@+id/action_mapsFragment_to_panoramaFragment"
+            app:destination="@id/panoramaFragment">
+            <argument
+                android:name="point"
+                app:argType="com.example.yandexmaps.args.PointArg" />
+        </action>
     </fragment>
     <fragment
         android:id="@+id/searchFragment"
-        android:name="com.example.yandexmaps.ui.fragments.main.SearchFragment"
+        android:name="com.example.yandexmaps.ui.fragments.search.SearchFragment"
         android:label="SearchFragment">
         <action
             android:id="@+id/action_searchFragment_to_mapsFragment"
@@ -29,6 +36,14 @@
             app:exitAnim="@anim/slide_out_right"
             app:popEnterAnim="@anim/slide_out_right"
             app:popExitAnim="@anim/slide_in_left"/>
+    </fragment>
+    <fragment
+        android:id="@+id/panoramaFragment"
+        android:name="com.example.yandexmaps.ui.fragments.panorama.PanoramaFragment"
+        android:label="PanoramaFragment">
+        <argument
+            android:name="point"
+            app:argType="com.example.yandexmaps.args.PointArg" />
     </fragment>
 
 </navigation>

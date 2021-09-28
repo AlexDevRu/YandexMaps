@@ -1,4 +1,4 @@
-package com.example.yandexmaps.ui.fragments.main
+package com.example.yandexmaps.ui.fragments.search
 
 import android.os.Bundle
 import android.util.Log
@@ -10,6 +10,7 @@ import com.example.yandexmaps.R
 import com.example.yandexmaps.databinding.FragmentSearchBinding
 import com.example.yandexmaps.ui.fragments.adapters.SuggestionsAdapter
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
+import com.example.yandexmaps.ui.fragments.main.MapsVM
 import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.yandex.mapkit.geometry.Geometry
 import com.yandex.mapkit.geometry.Point
@@ -125,7 +126,7 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
             }
         )
     }
-    private fun searchByQuery(point: Point) {
+    private fun searchByPoint(point: Point) {
         searchSession = searchManager.submit(
             point,
             11,

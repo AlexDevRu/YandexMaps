@@ -3,6 +3,7 @@ package com.example.yandexmaps.ui.fragments.main
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.yandexmaps.ui.models.SearchResponseModel
+import com.yandex.mapkit.GeoObject
 import com.yandex.mapkit.geometry.BoundingBox
 import com.yandex.mapkit.geometry.Point
 
@@ -11,6 +12,8 @@ class MapsVM: ViewModel() {
     val query = MutableLiveData<String>()
 
     var userLocation = Point()
+
+    val selectedGeoObject = MutableLiveData<GeoObject?>(null)
 
     val suggestionsList = MutableLiveData<List<String?>>()
 
