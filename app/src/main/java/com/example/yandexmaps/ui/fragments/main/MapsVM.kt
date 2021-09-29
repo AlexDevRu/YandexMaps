@@ -6,6 +6,7 @@ import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.yandex.mapkit.GeoObject
 import com.yandex.mapkit.geometry.BoundingBox
 import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.map.CameraPosition
 
 class MapsVM: ViewModel() {
 
@@ -38,6 +39,8 @@ class MapsVM: ViewModel() {
     var userAdded = false
 
     var markerMode = MARKER_MODE.PLACE
+
+    var cameraPosition: CameraPosition? = null
 }
 
 enum class MARKER_MODE {

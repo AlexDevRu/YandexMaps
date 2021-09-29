@@ -60,9 +60,10 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
 
 
-    private val cameraListener = CameraListener { _, _, _, _ ->
+    private val cameraListener = CameraListener { _, cameraPosition, _, _ ->
         userLocationLayer.resetAnchor()
         Log.d(TAG, "camera position")
+        viewModel.cameraPosition = cameraPosition
     }
 
     private val inputListener = object: InputListener {
@@ -153,7 +154,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         destinationCollection = binding.mapview.map.mapObjects.addCollection()
 
         directionHelper = DirectionHelper(binding.mapview)
-        //directionHelper.submitRequest()
 
         requestLocationPermission()
 
@@ -163,6 +163,10 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         userLocationLayer.isAutoZoomEnabled = true
 
         userLocationLayer.setObjectListener(this)
+
+        if(viewModel.cameraPosition != null) {
+            binding.mapview.map.move(viewModel.cameraPosition!!)
+        }
     }
 
     private fun initViews() {
