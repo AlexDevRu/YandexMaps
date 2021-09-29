@@ -2,12 +2,9 @@ package com.example.yandexmaps.ui.fragments.main
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
-import android.graphics.PointF
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.navigation.fragment.findNavController
@@ -16,15 +13,14 @@ import com.example.yandexmaps.args.toArg
 import com.example.yandexmaps.databinding.FragmentMapsBinding
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
 import com.example.yandexmaps.ui.helpers.DirectionHelper
+import com.example.yandexmaps.ui.helpers.PanoramaHelper
+import com.example.yandexmaps.ui.helpers.TrafficHelper
+import com.example.yandexmaps.ui.helpers.UserLocationHelper
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
-import com.yandex.mapkit.RequestPoint
-import com.yandex.mapkit.RequestPointType
-import com.yandex.mapkit.directions.DirectionsFactory
 import com.yandex.mapkit.directions.driving.*
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.layers.GeoObjectTapListener
-import com.yandex.mapkit.layers.ObjectEvent
 import com.yandex.mapkit.location.FilteringMode
 import com.yandex.mapkit.location.Location
 import com.yandex.mapkit.location.LocationListener
@@ -34,24 +30,12 @@ import com.yandex.mapkit.logo.HorizontalAlignment
 import com.yandex.mapkit.logo.VerticalAlignment
 import com.yandex.mapkit.map.*
 import com.yandex.mapkit.map.Map
-import com.yandex.mapkit.places.PlacesFactory
-import com.yandex.mapkit.places.panorama.PanoramaService
-import com.yandex.mapkit.traffic.TrafficColor
-import com.yandex.mapkit.traffic.TrafficLayer
-import com.yandex.mapkit.traffic.TrafficLevel
-import com.yandex.mapkit.traffic.TrafficListener
-import com.yandex.mapkit.user_location.UserLocationLayer
-import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
-import com.yandex.runtime.Error
 import com.yandex.runtime.image.ImageProvider
-import com.yandex.runtime.network.NetworkError
-import com.yandex.runtime.network.RemoteError
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
-import java.util.ArrayList
 
 
-class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::inflate), UserLocationObjectListener {
+class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::inflate) {
 
     companion object {
         private const val TAG = "MapsFragment"
@@ -59,14 +43,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
     private val viewModel by sharedViewModel<MapsVM>()
 
-    private lateinit var userLocationLayer: UserLocationLayer
-
-    private lateinit var panoramaService: PanoramaService
-
-
-
     private val cameraListener = CameraListener { _, cameraPosition, _, _ ->
-        userLocationLayer.resetAnchor()
+        userLocationHelper.resetAnchor()
         Log.d(TAG, "camera position")
         viewModel.cameraPosition = cameraPosition
     }
@@ -118,15 +96,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         }
     }
 
-    private val panoramaListener = object: PanoramaService.SearchListener {
-        override fun onPanoramaSearchResult(p0: String) {
-            binding.panoramaButton.visibility = View.VISIBLE
-        }
 
-        override fun onPanoramaSearchError(p0: Error) {
-            binding.panoramaButton.visibility = View.GONE
-        }
-    }
 
     private val locationPermissionResult = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -145,97 +115,40 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
     private lateinit var destinationCollection: MapObjectCollection
 
     private lateinit var directionHelper: DirectionHelper
+    private lateinit var trafficHelper: TrafficHelper
+    private val panoramaHelper = PanoramaHelper()
+    private lateinit var userLocationHelper: UserLocationHelper
 
 
-    private var trafficLevel: TrafficLevel? = null
-
-    private enum class TrafficFreshness {
-        Loading, OK, Expired
-    }
-
-    private var trafficFreshness: TrafficFreshness? = null
-
-    private lateinit var traffic: TrafficLayer
-
-    private val trafficListener = object: TrafficListener {
-        override fun onTrafficChanged(tl: TrafficLevel?) {
-            trafficLevel = tl
-            trafficFreshness = TrafficFreshness.OK
-            updateLevel()
-        }
-
-        override fun onTrafficLoading() {
-            trafficLevel = null
-            trafficFreshness = TrafficFreshness.Loading
-            updateLevel()
-        }
-
-        override fun onTrafficExpired() {
-            trafficLevel = null
-            trafficFreshness = TrafficFreshness.Expired
-            updateLevel()
-        }
-    }
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val mapKit = MapKitFactory.getInstance()
-
-        panoramaService = PlacesFactory.getInstance().createPanoramaService()
-
 
         searchCollection = binding.mapview.map.mapObjects.addCollection()
         originCollection = binding.mapview.map.mapObjects.addCollection()
         destinationCollection = binding.mapview.map.mapObjects.addCollection()
 
         directionHelper = DirectionHelper(binding.mapview)
+        trafficHelper = TrafficHelper(binding.mapview, binding.trafficView)
+        userLocationHelper = UserLocationHelper(binding.mapview) {
+            if (viewModel.userAdded) return@UserLocationHelper false
+
+            viewModel.userAdded = true
+
+            Log.w(TAG, "onObjectAdded")
+
+            viewModel.userLocation = it.pin.geometry
+
+            return@UserLocationHelper true
+        }
 
         requestLocationPermission()
-
-        userLocationLayer = mapKit.createUserLocationLayer(binding.mapview.mapWindow)
-        userLocationLayer.isVisible = true
-        userLocationLayer.isHeadingEnabled = true
-        userLocationLayer.isAutoZoomEnabled = true
-
-        userLocationLayer.setObjectListener(this)
-
-
-        traffic = MapKitFactory.getInstance().createTrafficLayer(binding.mapview.mapWindow)
-        traffic.isTrafficVisible = true
-        traffic.addTrafficListener(trafficListener)
-        updateLevel()
 
         if(viewModel.cameraPosition != null) {
             binding.mapview.map.move(viewModel.cameraPosition!!)
         }
     }
-
-    private fun updateLevel() {
-        val iconId: Int
-        var level: String? = ""
-        if (!traffic.isTrafficVisible) {
-            iconId = R.drawable.icon_traffic_light_dark
-        } else if (trafficFreshness == TrafficFreshness.Loading) {
-            iconId = R.drawable.icon_traffic_light_violet
-        } else if (trafficFreshness == TrafficFreshness.Expired) {
-            iconId = R.drawable.icon_traffic_light_blue
-        } else if (trafficLevel == null) {  // state is fresh but region has no data
-            iconId = R.drawable.icon_traffic_light_grey
-        } else {
-            iconId = when (trafficLevel?.color) {
-                TrafficColor.RED -> R.drawable.icon_traffic_light_red
-                TrafficColor.GREEN -> R.drawable.icon_traffic_light_green
-                TrafficColor.YELLOW -> R.drawable.icon_traffic_light_yellow
-                else -> R.drawable.icon_traffic_light_grey
-            }
-            level = trafficLevel?.level.toString()
-        }
-        binding.trafficView.trafficLight.setImageBitmap(BitmapFactory.decodeResource(resources, iconId))
-        binding.trafficView.trafficLightText.text = level
-    }
-
 
 
     private fun initViews() {
@@ -259,18 +172,15 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         binding.mapview.map.addInputListener(inputListener)
 
-        /*if(viewModel.cameraPosition != null)
-            binding.mapview.map.move(viewModel.cameraPosition!!)*/
-
         binding.mapview.map.addCameraListener(cameraListener)
 
         binding.myLocationButton.setOnClickListener {
 
-            if(userLocationLayer.cameraPosition() == null) return@setOnClickListener
+            if(userLocationHelper.userLocation == null) return@setOnClickListener
 
             binding.mapview.map.move(
-                userLocationLayer.cameraPosition()!!,
-                Animation(Animation.Type.SMOOTH, 2f),
+                userLocationHelper.userLocation!!,
+                Animation(Animation.Type.SMOOTH, 1f),
                 null
             )
         }
@@ -287,11 +197,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         binding.directionsButton.setOnClickListener {
             val action = MapsFragmentDirections.actionMapsFragmentToDirectionsFragment()
             findNavController().navigate(action)
-        }
-
-        binding.trafficView.trafficLight.setOnClickListener {
-            traffic.isTrafficVisible = !traffic.isTrafficVisible
-            updateLevel()
         }
 
         observe()
@@ -344,7 +249,11 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             if(it != null) {
                 val point = viewModel.selectedGeoObject.value?.geometry?.getOrNull(0)?.point
                 if(point != null)
-                    panoramaService.findNearest(point, panoramaListener)
+                    panoramaHelper.findNearest(point, {
+                        binding.panoramaButton.visibility = View.VISIBLE
+                    }, {
+                        binding.panoramaButton.visibility = View.GONE
+                    })
                 else
                     binding.panoramaButton.visibility = View.GONE
             } else {
@@ -398,63 +307,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             locationPermissionResult.launch(permissions)
         }
     }
-
-    override fun onObjectAdded(userLocationView: UserLocationView) {
-        if(viewModel.userAdded) return
-
-        viewModel.userAdded = true
-
-        Log.w(TAG, "onObjectAdded")
-
-        val width = binding.mapview.width()
-        val height = binding.mapview.height()
-
-        userLocationLayer.setAnchor(
-            PointF((width * 0.5).toFloat(), (height * 0.5).toFloat()),
-            PointF((width * 0.5).toFloat(), (height * 0.83).toFloat())
-        )
-
-        userLocationView.arrow.setIcon(
-            ImageProvider.fromResource(
-                requireContext(), R.drawable.user_arrow
-            )
-        )
-
-        val pinIcon = userLocationView.pin.useCompositeIcon()
-
-        pinIcon.setIcon(
-            "icon",
-            ImageProvider.fromResource(requireContext(), R.drawable.icon),
-            IconStyle().setAnchor(PointF(0f, 0f))
-                .setRotationType(RotationType.ROTATE)
-                .setZIndex(0f)
-                .setScale(1f)
-        )
-
-        pinIcon.setIcon(
-            "pin",
-            ImageProvider.fromResource(requireContext(), R.drawable.search_result),
-            IconStyle().setAnchor(PointF(0.5f, 0.5f))
-                .setRotationType(RotationType.ROTATE)
-                .setZIndex(1f)
-                .setScale(0.5f)
-        )
-
-        viewModel.userLocation = userLocationView.pin.geometry
-    }
-
-    override fun onObjectRemoved(p0: UserLocationView) {
-
-    }
-
-    override fun onObjectUpdated(userLocationView: UserLocationView, p1: ObjectEvent) {
-
-    }
-
-
-
-
-
 
     override fun onStop() {
         binding.mapview.onStop()
