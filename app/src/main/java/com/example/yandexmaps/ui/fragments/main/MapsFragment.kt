@@ -2,6 +2,7 @@ package com.example.yandexmaps.ui.fragments.main
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.graphics.PointF
 import android.os.Bundle
 import android.util.Log
@@ -35,6 +36,10 @@ import com.yandex.mapkit.map.*
 import com.yandex.mapkit.map.Map
 import com.yandex.mapkit.places.PlacesFactory
 import com.yandex.mapkit.places.panorama.PanoramaService
+import com.yandex.mapkit.traffic.TrafficColor
+import com.yandex.mapkit.traffic.TrafficLayer
+import com.yandex.mapkit.traffic.TrafficLevel
+import com.yandex.mapkit.traffic.TrafficListener
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
@@ -141,6 +146,38 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
     private lateinit var directionHelper: DirectionHelper
 
+
+    private var trafficLevel: TrafficLevel? = null
+
+    private enum class TrafficFreshness {
+        Loading, OK, Expired
+    }
+
+    private var trafficFreshness: TrafficFreshness? = null
+
+    private lateinit var traffic: TrafficLayer
+
+    private val trafficListener = object: TrafficListener {
+        override fun onTrafficChanged(tl: TrafficLevel?) {
+            trafficLevel = tl
+            trafficFreshness = TrafficFreshness.OK
+            updateLevel()
+        }
+
+        override fun onTrafficLoading() {
+            trafficLevel = null
+            trafficFreshness = TrafficFreshness.Loading
+            updateLevel()
+        }
+
+        override fun onTrafficExpired() {
+            trafficLevel = null
+            trafficFreshness = TrafficFreshness.Expired
+            updateLevel()
+        }
+    }
+
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -164,10 +201,42 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         userLocationLayer.setObjectListener(this)
 
+
+        traffic = MapKitFactory.getInstance().createTrafficLayer(binding.mapview.mapWindow)
+        traffic.isTrafficVisible = true
+        traffic.addTrafficListener(trafficListener)
+        updateLevel()
+
         if(viewModel.cameraPosition != null) {
             binding.mapview.map.move(viewModel.cameraPosition!!)
         }
     }
+
+    private fun updateLevel() {
+        val iconId: Int
+        var level: String? = ""
+        if (!traffic.isTrafficVisible) {
+            iconId = R.drawable.icon_traffic_light_dark
+        } else if (trafficFreshness == TrafficFreshness.Loading) {
+            iconId = R.drawable.icon_traffic_light_violet
+        } else if (trafficFreshness == TrafficFreshness.Expired) {
+            iconId = R.drawable.icon_traffic_light_blue
+        } else if (trafficLevel == null) {  // state is fresh but region has no data
+            iconId = R.drawable.icon_traffic_light_grey
+        } else {
+            iconId = when (trafficLevel?.color) {
+                TrafficColor.RED -> R.drawable.icon_traffic_light_red
+                TrafficColor.GREEN -> R.drawable.icon_traffic_light_green
+                TrafficColor.YELLOW -> R.drawable.icon_traffic_light_yellow
+                else -> R.drawable.icon_traffic_light_grey
+            }
+            level = trafficLevel?.level.toString()
+        }
+        binding.trafficView.trafficLight.setImageBitmap(BitmapFactory.decodeResource(resources, iconId))
+        binding.trafficView.trafficLightText.text = level
+    }
+
+
 
     private fun initViews() {
         binding.mapview.map.logo.setAlignment(Alignment(HorizontalAlignment.LEFT, VerticalAlignment.BOTTOM))
@@ -218,6 +287,11 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         binding.directionsButton.setOnClickListener {
             val action = MapsFragmentDirections.actionMapsFragmentToDirectionsFragment()
             findNavController().navigate(action)
+        }
+
+        binding.trafficView.trafficLight.setOnClickListener {
+            traffic.isTrafficVisible = !traffic.isTrafficVisible
+            updateLevel()
         }
 
         observe()
