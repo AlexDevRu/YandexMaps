@@ -15,16 +15,14 @@ class PanoramaHelper {
     private val panoramaListener = object: PanoramaService.SearchListener {
         override fun onPanoramaSearchResult(p0: String) {
             onSuccess(p0)
-            //binding.panoramaButton.visibility = View.VISIBLE
         }
 
         override fun onPanoramaSearchError(error: Error) {
             onFailure(error)
-            //binding.panoramaButton.visibility = View.GONE
         }
     }
 
-    fun findNearest(point: Point, onSuccess: (String) -> Unit, onError: (Error) -> Unit) {
+    fun findNearest(point: Point, onSuccess: (String) -> Unit, onFailure: (Error) -> Unit) {
         this.onSuccess = onSuccess
         this.onFailure = onFailure
         panoramaService.findNearest(point, panoramaListener)
