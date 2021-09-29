@@ -33,21 +33,25 @@ class PanoramaFragment: BaseFragment<FragmentPanoramaBinding>(FragmentPanoramaBi
     }
 
     override fun onPanoramaSearchResult(panoramaId: String) {
-        binding.panoview.getPlayer().openPanorama(panoramaId)
-        binding.panoview.getPlayer().enableMove()
-        binding.panoview.getPlayer().enableRotation()
-        binding.panoview.getPlayer().enableZoom()
-        binding.panoview.getPlayer().enableMarkers()
+        binding.panoview.player.openPanorama(panoramaId)
+        binding.panoview.player.enableMove()
+        binding.panoview.player.enableRotation()
+        binding.panoview.player.enableZoom()
+        binding.panoview.player.enableMarkers()
     }
 
     override fun onPanoramaSearchError(error: Error) {
         var errorMessage = getString(R.string.unknown_error_message)
-        if (error is NotFoundError) {
-            errorMessage = getString(R.string.not_found_error_message)
-        } else if (error is RemoteError) {
-            errorMessage = getString(R.string.remote_error_message)
-        } else if (error is NetworkError) {
-            errorMessage = getString(R.string.network_error_message)
+        when (error) {
+            is NotFoundError -> {
+                errorMessage = getString(R.string.not_found_error_message)
+            }
+            is RemoteError -> {
+                errorMessage = getString(R.string.remote_error_message)
+            }
+            is NetworkError -> {
+                errorMessage = getString(R.string.network_error_message)
+            }
         }
 
         Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()

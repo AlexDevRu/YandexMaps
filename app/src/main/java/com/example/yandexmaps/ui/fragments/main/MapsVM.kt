@@ -32,6 +32,14 @@ class MapsVM: ViewModel() {
             )
         }
 
+    val origin = MutableLiveData<Point?>(null)
+    val destination = MutableLiveData<Point?>(null)
 
     var userAdded = false
+
+    var markerMode = MARKER_MODE.PLACE
+}
+
+enum class MARKER_MODE {
+    PLACE, ORIGIN, DESTINATION
 }

@@ -6,16 +6,21 @@ import android.graphics.PointF
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.navigation.fragment.findNavController
 import com.example.yandexmaps.R
 import com.example.yandexmaps.args.toArg
-import com.example.yandexmaps.args.toModel
 import com.example.yandexmaps.databinding.FragmentMapsBinding
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
+import com.example.yandexmaps.ui.helpers.DirectionHelper
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
+import com.yandex.mapkit.RequestPoint
+import com.yandex.mapkit.RequestPointType
+import com.yandex.mapkit.directions.DirectionsFactory
+import com.yandex.mapkit.directions.driving.*
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.layers.GeoObjectTapListener
 import com.yandex.mapkit.layers.ObjectEvent
@@ -35,7 +40,10 @@ import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
 import com.yandex.runtime.Error
 import com.yandex.runtime.image.ImageProvider
+import com.yandex.runtime.network.NetworkError
+import com.yandex.runtime.network.RemoteError
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
+import java.util.ArrayList
 
 
 class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::inflate), UserLocationObjectListener {
@@ -49,6 +57,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
     private lateinit var userLocationLayer: UserLocationLayer
 
     private lateinit var panoramaService: PanoramaService
+
+
 
     private val cameraListener = CameraListener { _, _, _, _ ->
         userLocationLayer.resetAnchor()
@@ -72,6 +82,15 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         val selectionMetadata = it.geoObject
             .metadataContainer
             .getItem(GeoObjectSelectionMetadata::class.java)
+
+        val point = it.geoObject.geometry.firstOrNull()?.point
+        Log.w(TAG, "selected point=${point?.latitude},${point?.longitude}; markerMode=${viewModel.markerMode}")
+
+        if(viewModel.markerMode == MARKER_MODE.ORIGIN) {
+            viewModel.origin.value = point
+        } else if(viewModel.markerMode == MARKER_MODE.DESTINATION) {
+            viewModel.destination.value = point
+        }
 
         if (selectionMetadata != null) {
             binding.mapview.map.selectGeoObject(selectionMetadata.id, selectionMetadata.layerId)
@@ -103,8 +122,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         }
     }
 
-
-
     private val locationPermissionResult = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -117,19 +134,35 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         }
     }
 
+    private lateinit var searchCollection: MapObjectCollection
+    private lateinit var originCollection: MapObjectCollection
+    private lateinit var destinationCollection: MapObjectCollection
+
+    private lateinit var directionHelper: DirectionHelper
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        requestLocationPermission()
 
         val mapKit = MapKitFactory.getInstance()
+
+        panoramaService = PlacesFactory.getInstance().createPanoramaService()
+
+
+        searchCollection = binding.mapview.map.mapObjects.addCollection()
+        originCollection = binding.mapview.map.mapObjects.addCollection()
+        destinationCollection = binding.mapview.map.mapObjects.addCollection()
+
+        directionHelper = DirectionHelper(binding.mapview)
+        //directionHelper.submitRequest()
+
+        requestLocationPermission()
+
         userLocationLayer = mapKit.createUserLocationLayer(binding.mapview.mapWindow)
         userLocationLayer.isVisible = true
         userLocationLayer.isHeadingEnabled = true
         userLocationLayer.isAutoZoomEnabled = true
 
         userLocationLayer.setObjectListener(this)
-
-        panoramaService = PlacesFactory.getInstance().createPanoramaService()
     }
 
     private fun initViews() {
@@ -178,6 +211,11 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             }
         }
 
+        binding.directionsButton.setOnClickListener {
+            val action = MapsFragmentDirections.actionMapsFragmentToDirectionsFragment()
+            findNavController().navigate(action)
+        }
+
         observe()
     }
 
@@ -188,8 +226,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         viewModel.searchResponse.observe(viewLifecycleOwner) {
 
-            val mapObjects = binding.mapview.map.mapObjects
-            mapObjects.clear()
+            searchCollection.clear()
 
             if(it == null) {
                 binding.searchInfoContainer.visibility = View.GONE
@@ -208,7 +245,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 if(i >= it.showResults) break
                 val resultLocation = searchResult.obj?.geometry?.get(0)?.point
                 if (resultLocation != null) {
-                    mapObjects.addPlacemark(
+                    searchCollection.addPlacemark(
                         resultLocation,
                         ImageProvider.fromResource(requireContext(), R.drawable.search_result)
                     )
@@ -236,7 +273,34 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 binding.panoramaButton.visibility = View.GONE
             }
         }
+
+        viewModel.origin.observe(viewLifecycleOwner) {
+            originCollection.clear()
+            if(it != null) {
+                Log.w(TAG, "origin set $it")
+                originCollection.addPlacemark(it, ImageProvider.fromResource(requireContext(), R.drawable.origin))
+                buildDirection()
+            }
+        }
+        viewModel.destination.observe(viewLifecycleOwner) {
+            destinationCollection.clear()
+            if(it != null) {
+                Log.w(TAG, "destination set $it")
+                destinationCollection.addPlacemark(it, ImageProvider.fromResource(requireContext(), R.drawable.destination))
+                buildDirection()
+            }
+        }
     }
+
+    private fun buildDirection() {
+        val originPoint = viewModel.origin.value
+        val destinationPoint = viewModel.destination.value
+
+        if(originPoint != null && destinationPoint != null) {
+            directionHelper.submitRequest(originPoint, destinationPoint)
+        }
+    }
+
 
     private fun coarseAndFineLocationPermissionsIsGranted(): Boolean {
         return ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
@@ -308,6 +372,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
     override fun onObjectUpdated(userLocationView: UserLocationView, p1: ObjectEvent) {
 
     }
+
+
 
 
 

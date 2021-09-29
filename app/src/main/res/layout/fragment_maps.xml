@@ -40,7 +40,7 @@
             app:layout_constraintTop_toBottomOf="@id/searchInfoLabel"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/clearSearchButton"
-            tools:text="прааопраоррвлоарп вававвав"
+            tools:text="прааопраоррвлоарп вававвав dfngbdnfg dgfjdhfjgk dfgkh"
             android:maxLines="1"
             android:singleLine="true"
             android:textSize="16sp" />
@@ -85,7 +85,7 @@
         android:focusable="true" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/panoramaButton"
+        android:id="@+id/directionsButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:clickable="true"
@@ -93,6 +93,18 @@
         android:layout_marginBottom="10dp"
         app:layout_constraintBottom_toTopOf="@+id/myLocationButton"
         app:layout_constraintEnd_toEndOf="@+id/myLocationButton"
+        app:srcCompat="@drawable/ic_baseline_directions_24"
+        android:focusable="true" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/panoramaButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        app:backgroundTint="@color/white"
+        android:layout_marginBottom="10dp"
+        app:layout_constraintBottom_toTopOf="@+id/directionsButton"
+        app:layout_constraintEnd_toEndOf="@+id/directionsButton"
         app:srcCompat="@drawable/ic_baseline_panorama_24"
         android:focusable="true" />
 

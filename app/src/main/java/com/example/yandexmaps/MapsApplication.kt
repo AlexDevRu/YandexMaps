@@ -3,6 +3,7 @@ package com.example.yandexmaps
 import android.app.Application
 import com.example.yandexmaps.di.viewModelModule
 import com.yandex.mapkit.MapKitFactory
+import com.yandex.mapkit.directions.DirectionsFactory
 import com.yandex.mapkit.places.PlacesFactory
 import com.yandex.mapkit.transport.TransportFactory
 import org.koin.android.ext.koin.androidContext
@@ -15,6 +16,7 @@ class MapsApplication: Application() {
         MapKitFactory.initialize(this)
         TransportFactory.initialize(this)
         PlacesFactory.initialize(this)
+        DirectionsFactory.initialize(this)
 
         startKoin {
             androidContext(this@MapsApplication)
