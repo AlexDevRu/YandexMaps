@@ -1,5 +1,6 @@
 package com.example.yandexmaps.ui.helpers
 
+import android.util.Log
 import android.widget.Toast
 import com.example.yandexmaps.R
 import com.yandex.mapkit.RequestPoint
@@ -18,17 +19,26 @@ import java.util.*
 
 class DirectionHelper(private val mapView: MapView) {
 
+    companion object {
+        private const val TAG = "DirectionHelper"
+    }
+
     private val drivingRouter = DirectionsFactory.getInstance().createDrivingRouter()
     private lateinit var drivingSession: DrivingSession
+
+    private var onDrivingRoutesCallback: (MutableList<DrivingRoute>) -> Unit = {}
 
     private val routeCollection = mapView.map.mapObjects.addCollection()
 
 
     private val drivingRouteListener = object: DrivingSession.DrivingRouteListener {
         override fun onDrivingRoutes(routes: MutableList<DrivingRoute>) {
+            routeCollection.clear()
             for (route in routes) {
                 routeCollection.addPolyline(route.geometry)
+                //route.sections[0].metadata.annotation.descriptionText
             }
+            onDrivingRoutesCallback(routes)
         }
 
         override fun onDrivingRoutesError(error: Error) {
@@ -45,7 +55,8 @@ class DirectionHelper(private val mapView: MapView) {
     }
 
 
-    fun submitRequest(start: Point, end: Point) {
+    fun submitRequest(start: Point, end: Point, onDrivingRoutesCallback: (MutableList<DrivingRoute>) -> Unit) {
+        this.onDrivingRoutesCallback = onDrivingRoutesCallback
         val drivingOptions = DrivingOptions()
         val vehicleOptions = VehicleOptions()
         val requestPoints = ArrayList<RequestPoint>()

@@ -33,7 +33,7 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
     private lateinit var suggestionsAdapter: SuggestionsAdapter
 
     private lateinit var suggestSession: SuggestSession
-    private lateinit var searchManager: SearchManager
+    private val searchManager = SearchFactory.getInstance().createSearchManager(SearchManagerType.COMBINED)
 
 
     private val SEARCH_OPTIONS = SuggestOptions().setSuggestTypes(
@@ -49,7 +49,6 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        searchManager = SearchFactory.getInstance().createSearchManager(SearchManagerType.COMBINED)
         suggestSession = searchManager.createSuggestSession()
 
         suggestionsAdapter = SuggestionsAdapter {
@@ -116,24 +115,6 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
             object: Session.SearchListener {
                 override fun onSearchResponse(response: Response) {
                     viewModel.searchResponse.value = SearchResponseModel(response, 1)
-                    val action = SearchFragmentDirections.actionSearchFragmentToMapsFragment()
-                    findNavController().navigate(action)
-                }
-
-                override fun onSearchError(error: Error) {
-                    showSnackBar(error.toString())
-                }
-            }
-        )
-    }
-    private fun searchByPoint(point: Point) {
-        searchSession = searchManager.submit(
-            point,
-            11,
-            SearchOptions(),
-            object: Session.SearchListener {
-                override fun onSearchResponse(response: Response) {
-                    viewModel.searchResponse.value = SearchResponseModel(response)
                     val action = SearchFragmentDirections.actionSearchFragmentToMapsFragment()
                     findNavController().navigate(action)
                 }

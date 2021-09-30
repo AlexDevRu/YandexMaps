@@ -29,6 +29,7 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right"/>
+
     </fragment>
     <fragment
         android:id="@+id/searchFragment"
@@ -63,6 +64,16 @@
             app:exitAnim="@anim/slide_out_right"
             app:popEnterAnim="@anim/slide_out_right"
             app:popExitAnim="@anim/slide_in_left"/>
+        <action
+            android:id="@+id/action_directionsFragment_to_selectDirectionInputDialog"
+            app:destination="@id/selectDirectionInputDialog" />
+        <action
+            android:id="@+id/action_directionsFragment_to_searchFragment"
+            app:destination="@id/searchFragment" />
     </fragment>
+    <dialog
+        android:id="@+id/selectDirectionInputDialog"
+        android:name="com.example.yandexmaps.ui.fragments.dialogs.SelectDirectionInputDialog"
+        android:label="SelectDirectionInputDialog" />
 
 </navigation>

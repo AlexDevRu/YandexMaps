@@ -5,5 +5,12 @@
     <string name="network_error_message">Network error</string>
     <string name="remote_error_message">Remote server error</string>
     <string name="unknown_error_message">Unknown error</string>
-    <string name="results_by_query">Результаты по запросу:</string>
+    <string name="results_by_query">Results by query:</string>
+
+    <string name="my_location">My location</string>
+    <string name="choose_on_map">Choose on the map</string>
+    <string name="search_by_query">Search by query</string>
+
+    <string name="origin">Origin</string>
+    <string name="destination">Destination</string>
 </resources>
