@@ -26,6 +26,8 @@ class DirectionsFragment(): BaseFragment<FragmentDirectionsBinding>(FragmentDire
     }
 
     private fun initViews() {
+        updatePoints()
+
         binding.origin.setOnClickListener {
             mapsVM.markerMode.value = MARKER_MODE.ORIGIN
             goToDirectionOptions()
@@ -39,34 +41,38 @@ class DirectionsFragment(): BaseFragment<FragmentDirectionsBinding>(FragmentDire
     }
 
     private fun goToMaps() {
-        if(findNavController().currentDestination?.id == R.id.selectDirectionInputDialog) {
-            findNavController().navigateUp()
-        }
         findNavController().navigateUp()
     }
 
     private fun goToDirectionOptions() {
-        if(findNavController().currentDestination?.id == R.id.selectDirectionInputDialog) {
-            findNavController().navigateUp()
-        }
-        val action = DirectionsFragmentDirections.actionDirectionsFragmentToSelectDirectionInputDialog()
-        findNavController().navigate(action)
+        /*val action = DirectionsFragmentDirections.actionDirectionsFragmentToSelectDirectionInputDialog()
+        findNavController().navigate(action)*/
     }
 
     private fun observe() {
         mapsVM.originAddress.observe(viewLifecycleOwner) {
-            binding.origin.text = it ?: "Choose origin"
+            if(mapsVM.directionAction.value == DIRECTION_ACTION.CHOOSE_ON_MAP && mapsVM.bindedMarkerType == MARKER_MODE.ORIGIN)
+                binding.origin.text = it ?: resources.getString(R.string.choose_origin)
         }
 
         mapsVM.destinationAddress.observe(viewLifecycleOwner) {
-            binding.destination.text = it ?: "Choose destination"
+            if(mapsVM.directionAction.value == DIRECTION_ACTION.CHOOSE_ON_MAP && mapsVM.bindedMarkerType == MARKER_MODE.DESTINATION)
+                binding.destination.text = it ?: resources.getString(R.string.choose_destination)
         }
 
         mapsVM.directionAction.observe(viewLifecycleOwner) {
-            Log.e(TAG, "currentDestination ${findNavController().currentDestination}")
             if(it == DIRECTION_ACTION.CHOOSE_ON_MAP) {
                 goToMaps()
-            }
+            } else updatePoints()
+        }
+    }
+
+    private fun updatePoints() {
+        if(mapsVM.directionAction.value == DIRECTION_ACTION.BIND_MY_LOCATION) {
+            if(mapsVM.bindedMarkerType == MARKER_MODE.ORIGIN)
+                binding.origin.text = resources.getString(R.string.my_location)
+            else if(mapsVM.bindedMarkerType == MARKER_MODE.DESTINATION)
+                binding.destination.text = resources.getString(R.string.my_location)
         }
     }
 }

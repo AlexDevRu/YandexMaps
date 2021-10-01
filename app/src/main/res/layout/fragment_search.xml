@@ -17,6 +17,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
+    <ImageButton
+        android:id="@+id/voiceSearchButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|end"
+        android:background="#EEEEEE"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@id/suggest_query"
+        app:layout_constraintBottom_toBottomOf="@id/suggest_query"
+        app:layout_constraintEnd_toEndOf="@id/suggest_query"
+        android:src="@drawable/ic_baseline_mic_24" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/suggest_result"
         android:layout_width="match_parent"

@@ -25,6 +25,7 @@ import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.directions.driving.*
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.layers.GeoObjectTapListener
+import com.yandex.mapkit.location.FilteringMode
 import com.yandex.mapkit.logo.Alignment
 import com.yandex.mapkit.logo.HorizontalAlignment
 import com.yandex.mapkit.logo.VerticalAlignment
@@ -66,12 +67,10 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
     }
 
     private fun setDirectionMarkerByPoint(point: Point) {
-        if(viewModel.directionAction.value == DIRECTION_ACTION.CHOOSE_ON_MAP) {
-            if(viewModel.markerMode.value == MARKER_MODE.ORIGIN) {
-                viewModel.origin.value = point
-            } else if(viewModel.markerMode.value == MARKER_MODE.DESTINATION) {
-                viewModel.destination.value = point
-            }
+        if(viewModel.markerMode.value == MARKER_MODE.ORIGIN) {
+            viewModel.origin.value = point
+        } else if(viewModel.markerMode.value == MARKER_MODE.DESTINATION) {
+            viewModel.destination.value = point
         }
     }
 
@@ -122,6 +121,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         SearchManagerType.COMBINED)
 
     private lateinit var searchSession: Session
+
+    private val locationManager = MapKitFactory.getInstance().createLocationManager()
 
 
 
@@ -194,32 +195,18 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             }
         }
 
-        binding.directionsButton.setOnClickListener {
-            val action = MapsFragmentDirections.actionMapsFragmentToDirectionsFragment()
-            findNavController().navigate(action)
-        }
-
-        /*binding.directionLayout.confirmButton.setOnClickListener {
-            val action = MapsFragmentDirections.actionMapsFragmentToDirectionsFragment()
-            findNavController().navigate(action)
-        }*/
-
-        /*binding.directionLayout.origin.setOnClickListener {
+        binding.directionLayout.origin.setOnClickListener {
             Log.e(TAG, "current destination ${findNavController().currentDestination}")
             viewModel.markerMode.value = MARKER_MODE.ORIGIN
-            val action = MapsFragmentDirections.actionMapsFragmentToDirectionsFragment()
+            val action = MapsFragmentDirections.actionMapsFragmentToSelectDirectionInputDialog()
             findNavController().navigate(action)
         }
 
         binding.directionLayout.destination.setOnClickListener {
             Log.e(TAG, "current destination ${findNavController().currentDestination}")
             viewModel.markerMode.value = MARKER_MODE.DESTINATION
-            val action = MapsFragmentDirections.actionMapsFragmentToDirectionsFragment()
+            val action = MapsFragmentDirections.actionMapsFragmentToSelectDirectionInputDialog()
             findNavController().navigate(action)
-        }*/
-
-        binding.closeButton.setOnClickListener {
-            viewModel.markerMode.value = MARKER_MODE.PLACE
         }
 
         observe()
@@ -335,34 +322,22 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         viewModel.markerMode.observe(viewLifecycleOwner) {
             Log.d(TAG, "marker mode observer ${it}")
-            when(it) {
-                MARKER_MODE.ORIGIN -> {
-                    Log.d(TAG, "marker mode origin")
-                    binding.directionMarkerContainer.visibility = View.VISIBLE
-                    binding.directionLabel.text = requireContext().resources.getString(R.string.origin)
-                }
-                MARKER_MODE.DESTINATION -> {
-                    Log.d(TAG, "marker mode dest")
-                    binding.directionMarkerContainer.visibility = View.VISIBLE
-                    binding.directionLabel.text = requireContext().resources.getString(R.string.destination)
-                }
-                MARKER_MODE.PLACE -> {
-                    Log.d(TAG, "marker mode place")
-                    binding.directionMarkerContainer.visibility = View.GONE
-                }
-            }
+            searchCollection.isVisible = it == MARKER_MODE.PLACE
+            originCollection.isVisible = it != MARKER_MODE.PLACE
+            destinationCollection.isVisible = it != MARKER_MODE.PLACE
+            directionHelper.updateVisibility(it != MARKER_MODE.PLACE)
         }
 
         viewModel.originAddress.observe(viewLifecycleOwner) {
             Log.d(TAG, "originAddress")
             if(viewModel.markerMode.value == MARKER_MODE.ORIGIN)
-                binding.directionMarkerPoint.text = it
+                binding.directionLayout.origin.text = it
         }
 
         viewModel.destinationAddress.observe(viewLifecycleOwner) {
             Log.d(TAG, "destinationAddress")
             if(viewModel.markerMode.value == MARKER_MODE.DESTINATION)
-                binding.directionMarkerPoint.text = it
+                binding.directionLayout.destination.text = it
         }
     }
 
@@ -384,11 +359,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         )
     }
 
-    private fun navigateToSearch() {
-        val action = MapsFragmentDirections.actionMapsFragmentToSearchFragment()
-        findNavController().navigate(action)
-    }
-
     private fun buildDirection() {
         val originPoint = viewModel.origin.value
         val destinationPoint = viewModel.destination.value
@@ -397,8 +367,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             directionHelper.submitRequest(originPoint, destinationPoint) {
                 it.forEach { route ->
                     Log.w(TAG, "route ${route}")
-                    Log.w(TAG, "route.metadata.description?.via ${route.metadata.description?.via}")
-                    Log.w(TAG, "route.sections[0].metadata.annotation.descriptionText ${route.sections[0].metadata.annotation.descriptionText}")
+                    Log.w(TAG, "route.metadata.weight ${route.metadata.weight.distance.text} ${route.metadata.weight.timeWithTraffic.text}")
                 }
             }
         }
@@ -418,6 +387,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         )
 
         if(coarseAndFineLocationPermissionsIsGranted()) {
+            locationManager.subscribeForLocationUpdates(0.0, 3000, 2.0, true, FilteringMode.ON, viewModel.locationUpdateListener)
             initViews()
         } else {
             locationPermissionResult.launch(permissions)

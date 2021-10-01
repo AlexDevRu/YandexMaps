@@ -1,16 +1,13 @@
 package com.example.yandexmaps.ui.fragments.main
 
 import android.util.Log
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.example.yandexmaps.utils.SingleLiveEvent
 import com.yandex.mapkit.GeoObject
-import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.BoundingBox
 import com.yandex.mapkit.geometry.Point
-import com.yandex.mapkit.location.FilteringMode
 import com.yandex.mapkit.location.Location
 import com.yandex.mapkit.location.LocationListener
 import com.yandex.mapkit.location.LocationStatus
@@ -56,10 +53,8 @@ class MapsVM: ViewModel() {
 
     var cameraPosition: CameraPosition? = null
 
-    private val locationManager = MapKitFactory.getInstance().createLocationManager()
 
-
-    private val locationUpdateListener = object : LocationListener {
+    val locationUpdateListener = object : LocationListener {
         override fun onLocationStatusUpdated(p0: LocationStatus) {
             Log.w(TAG, p0.toString())
         }
@@ -70,31 +65,33 @@ class MapsVM: ViewModel() {
             Log.w(TAG, "lat=${lat} " + "lon=${lng}")
             userLocation = location.position
 
-            if(directionAction.value == DIRECTION_ACTION.BIND_MY_LOCATION) {
-                if(bindedMarkerType == MARKER_MODE.ORIGIN) {
-                    origin.value = userLocation
-                } else if(bindedMarkerType == MARKER_MODE.DESTINATION) {
-                    destination.value = userLocation
-                }
+            syncDirectionPoint()
+        }
+    }
+
+    private fun syncDirectionPoint() {
+        if(directionAction.value == DIRECTION_ACTION.BIND_MY_LOCATION) {
+            if(bindedMarkerType == MARKER_MODE.ORIGIN) {
+                origin.value = userLocation
+            } else if(bindedMarkerType == MARKER_MODE.DESTINATION) {
+                destination.value = userLocation
             }
         }
     }
 
 
-    init {
-        locationManager.subscribeForLocationUpdates(0.0, 3000, 2.0, true, FilteringMode.ON, locationUpdateListener)
-    }
-
     val directionAction = SingleLiveEvent<DIRECTION_ACTION>()
 
-    private var bindedMarkerType: MARKER_MODE? = null
+    var bindedMarkerType: MARKER_MODE? = null
+        private set
 
     fun applyDirectionAction(action: DIRECTION_ACTION) {
         Log.w(TAG, "applyDirectionAction $action")
-        directionAction.value = action
         if(action == DIRECTION_ACTION.BIND_MY_LOCATION) {
             bindedMarkerType = markerMode.value
         }
+        directionAction.value = action
+        syncDirectionPoint()
     }
 }
 

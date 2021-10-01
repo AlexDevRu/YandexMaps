@@ -1,110 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.motion.widget.MotionLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black">
+    android:background="@color/black"
+    app:layoutDescription="@xml/fragment_maps_scene">
 
     <com.yandex.mapkit.mapview.MapView
         android:id="@+id/mapview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/searchInfoContainer"
+    <FrameLayout
+        android:id="@+id/wrapper"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:orientation="horizontal"
-        android:padding="6dp"
-        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/searchInfoLabel"
-            android:layout_width="0dp"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/searchInfoContainer"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:text="@string/results_by_query"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/clearSearchButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:background="@color/white"
+            android:orientation="horizontal"
+            android:padding="6dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/searchQuery"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:textSize="16sp"
-            app:layout_constraintEnd_toStartOf="@id/clearSearchButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/searchInfoLabel"
-            tools:text="прааопраоррвлоарп вававвав dfngbdnfg dgfjdhfjgk dfgkh" />
+            <TextView
+                android:id="@+id/searchInfoLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:text="@string/results_by_query"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@id/clearSearchButton"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        <ImageButton
-            android:id="@+id/clearSearchButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@null"
-            android:padding="4dp"
-            android:src="@drawable/ic_baseline_close_24"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            <TextView
+                android:id="@+id/searchQuery"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toStartOf="@id/clearSearchButton"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/searchInfoLabel"
+                tools:text="прааопраоррвлоарп вававвав dfngbdnfg dgfjdhfjgk dfgkh" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            <ImageButton
+                android:id="@+id/clearSearchButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:padding="4dp"
+                android:src="@drawable/ic_baseline_close_24"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/directionMarkerContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:orientation="horizontal"
-        android:padding="6dp"
-        android:visibility="visible"
-        app:layout_constraintTop_toTopOf="parent">
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <TextView
-            android:id="@+id/directionLabel"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/closeButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/directionMarkerPoint"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:textSize="16sp"
-            app:layout_constraintEnd_toStartOf="@id/closeButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/directionLabel"
-            tools:text="прааопраоррвлоарп вававвав" />
-
-        <ImageButton
-            android:id="@+id/closeButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@null"
-            android:padding="4dp"
-            android:src="@drawable/ic_baseline_close_24"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
 
 
     <include
@@ -114,14 +77,14 @@
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchInfoContainer" />
+        app:layout_constraintTop_toBottomOf="@id/wrapper" />
 
-    <!--<include
+    <include
         android:id="@+id/directionLayout"
         layout="@layout/fragment_directions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent" />-->
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -133,7 +96,7 @@
         android:clickable="true"
         android:focusable="true"
         app:backgroundTint="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/directionLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@android:drawable/ic_search_category_default" />
 
@@ -168,10 +131,10 @@
         android:layout_marginBottom="10dp"
         android:clickable="true"
         android:focusable="true"
-        app:backgroundTint="@color/white"
         android:visibility="gone"
+        app:backgroundTint="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/directionsButton"
         app:layout_constraintEnd_toEndOf="@+id/directionsButton"
         app:srcCompat="@drawable/ic_baseline_panorama_24" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.motion.widget.MotionLayout>

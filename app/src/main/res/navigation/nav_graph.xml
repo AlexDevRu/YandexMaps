@@ -23,12 +23,8 @@
                 app:argType="com.example.yandexmaps.args.PointArg" />
         </action>
         <action
-            android:id="@+id/action_mapsFragment_to_directionsFragment"
-            app:destination="@id/directionsFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popEnterAnim="@anim/slide_in_left"
-            app:popExitAnim="@anim/slide_out_right"/>
+            android:id="@+id/action_mapsFragment_to_selectDirectionInputDialog"
+            app:destination="@id/selectDirectionInputDialog" />
 
     </fragment>
     <fragment
@@ -52,24 +48,6 @@
         <argument
             android:name="point"
             app:argType="com.example.yandexmaps.args.PointArg" />
-    </fragment>
-    <fragment
-        android:id="@+id/directionsFragment"
-        android:name="com.example.yandexmaps.ui.fragments.direction.DirectionsFragment"
-        android:label="DirectionsFragment" >
-        <action
-            android:id="@+id/action_directionsFragment_to_mapsFragment"
-            app:destination="@id/mapsFragment"
-            app:enterAnim="@anim/slide_in_left"
-            app:exitAnim="@anim/slide_out_right"
-            app:popEnterAnim="@anim/slide_out_right"
-            app:popExitAnim="@anim/slide_in_left"/>
-        <action
-            android:id="@+id/action_directionsFragment_to_selectDirectionInputDialog"
-            app:destination="@id/selectDirectionInputDialog" />
-        <action
-            android:id="@+id/action_directionsFragment_to_searchFragment"
-            app:destination="@id/searchFragment" />
     </fragment>
     <dialog
         android:id="@+id/selectDirectionInputDialog"

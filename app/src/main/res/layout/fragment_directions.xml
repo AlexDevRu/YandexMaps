@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/white"
@@ -22,7 +23,7 @@
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         app:strokeColor="@color/light_blue"
         android:textColor="@color/light_blue"
-        android:text="Choose origin"
+        android:text="@string/choose_origin"
         app:layout_constraintTop_toBottomOf="@id/arrowUpView"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_width="match_parent"
@@ -33,10 +34,21 @@
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         app:strokeColor="@color/red"
         android:textColor="@color/red"
-        android:text="Choose destination"
+        android:text="@string/choose_destination"
         app:layout_constraintTop_toBottomOf="@id/origin"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/routesList"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:padding="10dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/destination" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

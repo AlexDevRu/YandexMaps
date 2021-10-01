@@ -30,6 +30,10 @@ class DirectionHelper(private val mapView: MapView) {
 
     private val routeCollection = mapView.map.mapObjects.addCollection()
 
+    fun updateVisibility(isVisible: Boolean) {
+        routeCollection.isVisible = isVisible
+    }
+
 
     private val drivingRouteListener = object: DrivingSession.DrivingRouteListener {
         override fun onDrivingRoutes(routes: MutableList<DrivingRoute>) {

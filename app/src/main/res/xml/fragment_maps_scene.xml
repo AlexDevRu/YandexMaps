@@ -9,7 +9,7 @@
         motion:duration="400">
        <KeyFrameSet>
        </KeyFrameSet>
-
+        <OnClick motion:targetId="@id/directionsButton" />
         <OnSwipe motion:touchAnchorId="@id/directionLayout" motion:touchRegionId="@id/directionLayout"
             motion:dragDirection="dragUp" motion:touchAnchorSide="top" />
     </Transition>
