@@ -1,14 +1,13 @@
 package com.example.yandexmaps.ui.fragments.dialogs
 
 import android.app.Dialog
-import android.content.DialogInterface
 import android.os.Bundle
-import android.view.LayoutInflater
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.yandexmaps.R
-import com.example.yandexmaps.databinding.LayoutDirectionsOptionsBinding
 import com.example.yandexmaps.ui.fragments.adapters.DirectionOptionsAdapter
 import com.example.yandexmaps.ui.fragments.main.DIRECTION_ACTION
 import com.example.yandexmaps.ui.fragments.main.MapsVM
@@ -17,8 +16,6 @@ import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 
 class SelectDirectionInputDialog : DialogFragment() {
-
-    private var binding: LayoutDirectionsOptionsBinding? = null
 
     private lateinit var adapter: DirectionOptionsAdapter
 
@@ -30,25 +27,23 @@ class SelectDirectionInputDialog : DialogFragment() {
     )
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = LayoutDirectionsOptionsBinding.inflate(LayoutInflater.from(context))
+
+        val recyclerView = RecyclerView(requireContext())
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        recyclerView.setPadding(0, 10, 0, 10)
 
         adapter = DirectionOptionsAdapter {
             findNavController().navigateUp()
             mapsVM.applyDirectionAction(it.action)
         }
 
-        binding?.root?.adapter = adapter
+        recyclerView.adapter = adapter
         adapter.submitList(options)
 
         return activity?.let {
             val builder = AlertDialog.Builder(it)
-            builder.setTitle("Choose").setView(binding!!.root)
+            builder.setTitle("Choose").setView(recyclerView)
             builder.create()
         } ?: throw IllegalStateException("Activity cannot be null")
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        binding = null
     }
 }
