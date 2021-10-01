@@ -1,9 +1,13 @@
 package com.example.yandexmaps.ui.fragments.search
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.speech.RecognizerIntent
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.widget.SearchView
 import androidx.navigation.fragment.findNavController
 import com.example.yandexmaps.R
@@ -13,7 +17,6 @@ import com.example.yandexmaps.ui.fragments.base.BaseFragment
 import com.example.yandexmaps.ui.fragments.main.MapsVM
 import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.yandex.mapkit.geometry.Geometry
-import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.search.*
 import com.yandex.runtime.Error
 import com.yandex.runtime.network.NetworkError
@@ -46,6 +49,17 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
     private lateinit var searchSession: Session
 
 
+    private val voiceSearchActivityResultLauncher = registerForActivityResult(
+        StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val list = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val text = list?.firstOrNull()
+            binding.suggestQuery.setQuery(text.orEmpty(), false)
+        }
+    }
+
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -66,6 +80,11 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
                 return true
             }
         })
+
+        binding.voiceSearchButton.setOnClickListener {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            voiceSearchActivityResultLauncher.launch(intent)
+        }
 
         observe()
     }
