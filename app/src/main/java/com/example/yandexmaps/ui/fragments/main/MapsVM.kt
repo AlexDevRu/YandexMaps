@@ -50,6 +50,7 @@ class MapsVM: ViewModel() {
     var userAdded = false
 
     var markerMode = MutableLiveData(MARKER_MODE.PLACE)
+    var savedDirectionMarkerType = MARKER_MODE.DESTINATION
 
     var cameraPosition: CameraPosition? = null
 
@@ -89,6 +90,8 @@ class MapsVM: ViewModel() {
         Log.w(TAG, "applyDirectionAction $action")
         if(action == DIRECTION_ACTION.BIND_MY_LOCATION) {
             bindedMarkerType = markerMode.value
+        } else {
+            bindedMarkerType = null
         }
         directionAction.value = action
         syncDirectionPoint()

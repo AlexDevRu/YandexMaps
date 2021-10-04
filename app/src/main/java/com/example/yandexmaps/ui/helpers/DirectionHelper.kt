@@ -11,6 +11,7 @@ import com.yandex.mapkit.directions.driving.DrivingRoute
 import com.yandex.mapkit.directions.driving.DrivingSession
 import com.yandex.mapkit.directions.driving.VehicleOptions
 import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.geometry.Polyline
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.runtime.Error
 import com.yandex.runtime.network.NetworkError
@@ -27,6 +28,7 @@ class DirectionHelper(private val mapView: MapView) {
     private lateinit var drivingSession: DrivingSession
 
     private var onDrivingRoutesCallback: (MutableList<DrivingRoute>) -> Unit = {}
+    private var onErrorCallback: (Error) -> Unit = {}
 
     private val routeCollection = mapView.map.mapObjects.addCollection()
 
@@ -40,7 +42,6 @@ class DirectionHelper(private val mapView: MapView) {
             routeCollection.clear()
             for (route in routes) {
                 routeCollection.addPolyline(route.geometry)
-                //route.sections[0].metadata.annotation.descriptionText
             }
             onDrivingRoutesCallback(routes)
         }
@@ -55,12 +56,19 @@ class DirectionHelper(private val mapView: MapView) {
             )
 
             Toast.makeText(mapView.context, errorMessage, Toast.LENGTH_SHORT).show()
+
+            onErrorCallback(error)
         }
     }
 
 
-    fun submitRequest(start: Point, end: Point, onDrivingRoutesCallback: (MutableList<DrivingRoute>) -> Unit) {
+    fun submitRequest(start: Point, end: Point,
+                      onDrivingRoutesCallback: (MutableList<DrivingRoute>) -> Unit,
+                      onErrorCallback: (Error) -> Unit,
+    ) {
         this.onDrivingRoutesCallback = onDrivingRoutesCallback
+        this.onErrorCallback = onErrorCallback
+
         val drivingOptions = DrivingOptions()
         val vehicleOptions = VehicleOptions()
         val requestPoints = ArrayList<RequestPoint>()

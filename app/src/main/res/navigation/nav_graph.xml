@@ -52,6 +52,12 @@
     <dialog
         android:id="@+id/selectDirectionInputDialog"
         android:name="com.example.yandexmaps.ui.fragments.dialogs.SelectDirectionInputDialog"
-        android:label="SelectDirectionInputDialog" />
+        android:label="SelectDirectionInputDialog" >
+        <action
+            android:id="@+id/action_selectDirectionInputDialog_to_mapsFragment"
+            app:destination="@id/mapsFragment"
+            app:popUpTo="@id/mapsFragment"
+            app:popUpToInclusive="true"/>
+    </dialog>
 
 </navigation>

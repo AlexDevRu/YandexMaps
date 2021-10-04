@@ -2,6 +2,7 @@ package com.example.yandexmaps.ui.fragments.dialogs
 
 import android.app.Dialog
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import androidx.navigation.fragment.findNavController
@@ -28,12 +29,18 @@ class SelectDirectionInputDialog : DialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
 
+        Log.w("SelectDialog", "onCreateDialog")
+
         val recyclerView = RecyclerView(requireContext())
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.setPadding(0, 10, 0, 10)
 
         adapter = DirectionOptionsAdapter {
-            findNavController().navigateUp()
+            Log.w("SelectDialog", "jdhfkjdhsf")
+            //findNavController().navigateUp()
+            findNavController().popBackStack()
+            //val action = SelectDirectionInputDialogDirections.actionSelectDirectionInputDialogToMapsFragment()
+            //findNavController().navigate(action)
             mapsVM.applyDirectionAction(it.action)
         }
 

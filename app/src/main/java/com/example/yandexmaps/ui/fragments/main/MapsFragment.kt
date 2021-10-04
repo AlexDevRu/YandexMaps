@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
@@ -174,8 +175,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             viewModel.searchResponse.value = null
         }
 
-        Log.d(TAG, "init listeners")
-
         binding.mapview.map.addTapListener(geoObjectTapListener)
 
         binding.mapview.map.addInputListener(inputListener)
@@ -205,23 +204,73 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         binding.directionLayout.origin.setOnClickListener {
             Log.e(TAG, "current destination ${findNavController().currentDestination}")
             viewModel.markerMode.value = MARKER_MODE.ORIGIN
-            val action = MapsFragmentDirections.actionMapsFragmentToSelectDirectionInputDialog()
-            findNavController().navigate(action)
+            openSelectDialog()
         }
 
         binding.directionLayout.destination.setOnClickListener {
+            if(counter++ % 2 == 1) return@setOnClickListener
             Log.e(TAG, "current destination ${findNavController().currentDestination}")
             viewModel.markerMode.value = MARKER_MODE.DESTINATION
-            val action = MapsFragmentDirections.actionMapsFragmentToSelectDirectionInputDialog()
-            findNavController().navigate(action)
+            openSelectDialog()
         }
+
+        binding.root.setTransitionListener(object: MotionLayout.TransitionListener {
+            var fromStart = true
+            var wasChanged = false
+
+            override fun onTransitionStarted(
+                motionLayout: MotionLayout?,
+                startId: Int,
+                endId: Int
+            ) {}
+
+            override fun onTransitionChange(
+                motionLayout: MotionLayout?,
+                startId: Int,
+                endId: Int,
+                progress: Float
+            ) {
+                if (!wasChanged) {
+                    if (fromStart && progress >= 0.5f) {
+                        binding.directionsButton.setImageResource(R.drawable.ic_baseline_arrow_back_24)
+                        wasChanged = true
+                    }
+                    if (!fromStart && progress <= 0.5f) {
+                        binding.directionsButton.setImageResource(R.drawable.ic_baseline_directions_24)
+                        wasChanged = true
+                    }
+                }
+            }
+
+            override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+                wasChanged = false
+                fromStart = !fromStart
+                if(currentId == R.id.start) viewModel.markerMode.value = MARKER_MODE.PLACE
+                else viewModel.markerMode.value = viewModel.savedDirectionMarkerType
+            }
+
+            override fun onTransitionTrigger(
+                motionLayout: MotionLayout?,
+                triggerId: Int,
+                positive: Boolean,
+                progress: Float
+            ) {
+                if(!positive)
+                    viewModel.savedDirectionMarkerType = viewModel.markerMode.value ?: MARKER_MODE.DESTINATION
+            }
+
+        })
 
         observe()
     }
 
-    private val queryObserver = Observer<String> {
-        Log.w(TAG, "maps fragment query updated")
+    private var counter = 0
+
+    private fun openSelectDialog() {
+        val action = MapsFragmentDirections.actionMapsFragmentToSelectDirectionInputDialog()
+        findNavController().navigate(action)
     }
+
     private val searchResponseObserver = Observer<SearchResponseModel?> {
         searchCollection.clear()
 
@@ -317,8 +366,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
     }
 
     private fun observe() {
-        viewModel.query.observe(viewLifecycleOwner, queryObserver)
-
         viewModel.searchResponse.observe(viewLifecycleOwner, searchResponseObserver)
 
         viewModel.selectedGeoObject.observe(viewLifecycleOwner, selectedGeoObjectObserver)
@@ -371,12 +418,34 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         val destinationPoint = viewModel.destination.value
 
         if(originPoint != null && destinationPoint != null) {
-            directionHelper.submitRequest(originPoint, destinationPoint) {
+            binding.directionLayout.progressBar.visibility = View.VISIBLE
+
+            directionHelper.submitRequest(originPoint, destinationPoint, {
+                var distance = 0.0
+                var time = 0.0
                 it.forEach { route ->
-                    Log.w(TAG, "route ${route}")
+                    distance += route.metadata.weight.distance.value
+                    time += route.metadata.weight.time.value
+                    Log.w(TAG, "route ${route.metadata}")
+                    route.sections.forEach {
+                        //Log.e(TAG, "section ${it.metadata.annotation.descriptionText}")
+                        //Log.e(TAG, "section ${it.metadata}")
+                    }
                     Log.w(TAG, "route.metadata.weight ${route.metadata.weight.distance.text} ${route.metadata.weight.timeWithTraffic.text}")
                 }
-            }
+                val km = (distance / 1000).toInt()
+                val metres = (distance % 1000).toInt()
+
+                val h = (time / 3600).toInt()
+                val m = ((time % 3600) / 60).toInt()
+                val s = (time - h * 3600 - m * 60).toInt()
+
+                binding.directionLayout.progressBar.visibility = View.GONE
+
+                binding.directionLayout.generalInformation.text = "${km} km ${metres} m, ${h} h ${m} m ${s} s"
+            }, {
+                binding.directionLayout.progressBar.visibility = View.GONE
+            })
         }
     }
 
@@ -394,7 +463,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         )
 
         if(coarseAndFineLocationPermissionsIsGranted()) {
-            locationManager.subscribeForLocationUpdates(0.0, 3000, 2.0, true, FilteringMode.ON, viewModel.locationUpdateListener)
+            locationManager.subscribeForLocationUpdates(0.0, 3000, 1.0, true, FilteringMode.ON, viewModel.locationUpdateListener)
             locationManager.requestSingleUpdate(locationListener)
             initViews()
         } else {
