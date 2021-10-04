@@ -13,7 +13,6 @@ import com.example.yandexmaps.R
 import com.example.yandexmaps.args.toArg
 import com.example.yandexmaps.databinding.FragmentMapsBinding
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
-import com.example.yandexmaps.ui.fragments.search.SearchFragmentDirections
 import com.example.yandexmaps.ui.helpers.DirectionHelper
 import com.example.yandexmaps.ui.helpers.PanoramaHelper
 import com.example.yandexmaps.ui.helpers.TrafficHelper
@@ -26,6 +25,9 @@ import com.yandex.mapkit.directions.driving.*
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.layers.GeoObjectTapListener
 import com.yandex.mapkit.location.FilteringMode
+import com.yandex.mapkit.location.Location
+import com.yandex.mapkit.location.LocationListener
+import com.yandex.mapkit.location.LocationStatus
 import com.yandex.mapkit.logo.Alignment
 import com.yandex.mapkit.logo.HorizontalAlignment
 import com.yandex.mapkit.logo.VerticalAlignment
@@ -124,6 +126,17 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
     private val locationManager = MapKitFactory.getInstance().createLocationManager()
 
+    private val locationListener = object: LocationListener {
+        override fun onLocationUpdated(point: Location) {
+            Log.w(TAG, "user location ${point.position.latitude}, ${point.position.longitude}")
+            viewModel.userLocation = point.position
+        }
+
+        override fun onLocationStatusUpdated(p0: LocationStatus) {
+            Log.w(TAG, "user location status ${p0}")
+        }
+    }
+
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -137,13 +150,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         trafficHelper = TrafficHelper(binding.mapview, binding.trafficView)
         userLocationHelper = UserLocationHelper(binding.mapview) {
             if (viewModel.userAdded) return@UserLocationHelper false
-
             viewModel.userAdded = true
-
-            Log.w(TAG, "onObjectAdded")
-
-            viewModel.userLocation = it.pin.geometry
-
             return@UserLocationHelper true
         }
 
@@ -388,11 +395,13 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         if(coarseAndFineLocationPermissionsIsGranted()) {
             locationManager.subscribeForLocationUpdates(0.0, 3000, 2.0, true, FilteringMode.ON, viewModel.locationUpdateListener)
+            locationManager.requestSingleUpdate(locationListener)
             initViews()
         } else {
             locationPermissionResult.launch(permissions)
         }
     }
+
 
     override fun onStop() {
         binding.mapview.onStop()
