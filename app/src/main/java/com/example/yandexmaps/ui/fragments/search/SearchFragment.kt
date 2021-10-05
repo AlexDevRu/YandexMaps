@@ -17,6 +17,7 @@ import com.example.yandexmaps.ui.fragments.base.BaseFragment
 import com.example.yandexmaps.ui.fragments.main.MapsVM
 import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.yandex.mapkit.geometry.Geometry
+import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.search.*
 import com.yandex.runtime.Error
 import com.yandex.runtime.network.NetworkError
@@ -134,8 +135,9 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
             object: Session.SearchListener {
                 override fun onSearchResponse(response: Response) {
                     viewModel.searchResponse.value = SearchResponseModel(response, 1)
-                    val action = SearchFragmentDirections.actionSearchFragmentToMapsFragment()
-                    findNavController().navigate(action)
+                    //val action = SearchFragmentDirections.actionSearchFragmentToMapsFragment()
+                    //findNavController().navigate(action)
+                    findNavController().navigateUp()
                 }
 
                 override fun onSearchError(error: Error) {

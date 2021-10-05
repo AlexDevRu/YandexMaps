@@ -19,4 +19,6 @@
 
     <string name="total_distance">Total distance: %s</string>
     <string name="total_duration">Total duration: %s</string>
+
+    <string name="direction_not_found">Direction is not found</string>
 </resources>

@@ -50,7 +50,7 @@ class MapsVM: ViewModel() {
     var userAdded = false
 
     var markerMode = MutableLiveData(MARKER_MODE.PLACE)
-    var savedDirectionMarkerType = MARKER_MODE.DESTINATION
+    var directionMarkerType = MutableLiveData(DIRECTION_MARKER_TYPE.DESTINATION)
 
     var cameraPosition: CameraPosition? = null
 
@@ -70,11 +70,11 @@ class MapsVM: ViewModel() {
         }
     }
 
-    private fun syncDirectionPoint() {
+    fun syncDirectionPoint() {
         if(directionAction.value == DIRECTION_ACTION.BIND_MY_LOCATION) {
-            if(bindedMarkerType == MARKER_MODE.ORIGIN) {
+            if(bindedMarkerType == DIRECTION_MARKER_TYPE.ORIGIN) {
                 origin.value = userLocation
-            } else if(bindedMarkerType == MARKER_MODE.DESTINATION) {
+            } else if(bindedMarkerType == DIRECTION_MARKER_TYPE.DESTINATION) {
                 destination.value = userLocation
             }
         }
@@ -83,23 +83,31 @@ class MapsVM: ViewModel() {
 
     val directionAction = SingleLiveEvent<DIRECTION_ACTION>()
 
-    var bindedMarkerType: MARKER_MODE? = null
+    var bindedMarkerType: DIRECTION_MARKER_TYPE? = null
         private set
 
-    fun applyDirectionAction(action: DIRECTION_ACTION) {
+    fun applyDirectionAction(action: DIRECTION_ACTION, bindMarkerMode: DIRECTION_MARKER_TYPE? = null) {
         Log.w(TAG, "applyDirectionAction $action")
         if(action == DIRECTION_ACTION.BIND_MY_LOCATION) {
-            bindedMarkerType = markerMode.value
+            bindedMarkerType = bindMarkerMode ?: directionMarkerType.value
         } else {
             bindedMarkerType = null
         }
         directionAction.value = action
         syncDirectionPoint()
     }
+
+    init {
+
+    }
 }
 
 enum class MARKER_MODE {
-    PLACE, ORIGIN, DESTINATION
+    PLACE, DIRECTION
+}
+
+enum class DIRECTION_MARKER_TYPE {
+    ORIGIN, DESTINATION
 }
 
 enum class DIRECTION_ACTION {
