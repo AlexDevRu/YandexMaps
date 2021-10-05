@@ -45,13 +45,13 @@
         android:visibility="gone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/generalInformation"
+        app:layout_constraintTop_toTopOf="@id/distance"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/destination" />
 
     <TextView
-        android:id="@+id/generalInformation"
+        android:id="@+id/distance"
         android:layout_marginTop="10dp"
         android:textSize="18sp"
         android:textStyle="bold"
@@ -59,6 +59,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/destination"/>
+
+    <TextView
+        android:id="@+id/duration"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        tools:text="dkfljgklj"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/distance"/>
 
     <!--<androidx.recyclerview.widget.RecyclerView
         android:id="@+id/routesList"

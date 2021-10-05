@@ -69,7 +69,7 @@ class DirectionHelper(private val mapView: MapView) {
         this.onDrivingRoutesCallback = onDrivingRoutesCallback
         this.onErrorCallback = onErrorCallback
 
-        val drivingOptions = DrivingOptions()
+        val drivingOptions = DrivingOptions().setRoutesCount(1)
         val vehicleOptions = VehicleOptions()
         val requestPoints = ArrayList<RequestPoint>()
         requestPoints.add(

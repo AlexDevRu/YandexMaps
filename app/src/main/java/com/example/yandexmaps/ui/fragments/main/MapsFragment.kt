@@ -23,6 +23,8 @@ import com.yandex.mapkit.Animation
 import com.yandex.mapkit.GeoObject
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.directions.driving.*
+import com.yandex.mapkit.geometry.BoundingBox
+import com.yandex.mapkit.geometry.BoundingBoxHelper
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.layers.GeoObjectTapListener
 import com.yandex.mapkit.location.FilteringMode
@@ -426,12 +428,10 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 it.forEach { route ->
                     distance += route.metadata.weight.distance.value
                     time += route.metadata.weight.time.value
-                    Log.w(TAG, "route ${route.metadata}")
                     route.sections.forEach {
                         //Log.e(TAG, "section ${it.metadata.annotation.descriptionText}")
                         //Log.e(TAG, "section ${it.metadata}")
                     }
-                    Log.w(TAG, "route.metadata.weight ${route.metadata.weight.distance.text} ${route.metadata.weight.timeWithTraffic.text}")
                 }
                 val km = (distance / 1000).toInt()
                 val metres = (distance % 1000).toInt()
@@ -440,9 +440,19 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 val m = ((time % 3600) / 60).toInt()
                 val s = (time - h * 3600 - m * 60).toInt()
 
+                val f: (Int, String) -> String = { n, u ->
+                    if(n > 0) "${n} ${u} " else ""
+                }
+
                 binding.directionLayout.progressBar.visibility = View.GONE
 
-                binding.directionLayout.generalInformation.text = "${km} km ${metres} m, ${h} h ${m} m ${s} s"
+                binding.directionLayout.distance.text = resources.getString(R.string.total_distance, f(km, "km") + f(metres, "m"))
+                binding.directionLayout.duration.text = resources.getString(R.string.total_duration, f(h, "h") + f(m, "min") + f(s, "s"))
+
+                val box = BoundingBoxHelper.getBounds(it.first().geometry)
+                var cameraPosition = binding.mapview.map.cameraPosition(box)
+                cameraPosition = CameraPosition(cameraPosition.target, cameraPosition.zoom - 0.8f, cameraPosition.azimuth, cameraPosition.tilt)
+                binding.mapview.map.move(cameraPosition, Animation(Animation.Type.SMOOTH, 0f), null)
             }, {
                 binding.directionLayout.progressBar.visibility = View.GONE
             })

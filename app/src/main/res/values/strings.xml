@@ -16,4 +16,7 @@
 
     <string name="choose_origin">Choose origin</string>
     <string name="choose_destination">Choose destination</string>
+
+    <string name="total_distance">Total distance: %s</string>
+    <string name="total_duration">Total duration: %s</string>
 </resources>
