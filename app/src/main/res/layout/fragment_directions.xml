@@ -55,39 +55,57 @@
         android:layout_marginTop="10dp"
         android:textSize="18sp"
         android:textStyle="bold"
-        tools:text="dkfljgklj"
-        android:layout_width="match_parent"
+        tools:text="@string/total_distance"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/routesButton"
         app:layout_constraintTop_toBottomOf="@id/destination"/>
 
     <TextView
         android:id="@+id/duration"
         android:textSize="18sp"
         android:textStyle="bold"
-        tools:text="dkfljgklj"
-        android:layout_width="match_parent"
+        tools:text="@string/total_duration"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/routesButton"
         app:layout_constraintTop_toBottomOf="@id/distance"/>
 
     <TextView
         android:id="@+id/directionNotFound"
         android:textSize="18sp"
         android:textStyle="bold"
+        android:visibility="gone"
         android:text="@string/direction_not_found"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="@color/red"
         app:layout_constraintTop_toBottomOf="@id/duration"/>
 
-    <!--<androidx.recyclerview.widget.RecyclerView
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/routesButton"
+        android:visibility="gone"
+        app:fabSize="mini"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        app:srcCompat="@android:drawable/ic_input_add"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/distance"
+        app:layout_constraintBottom_toBottomOf="@id/duration"
+        android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
+        app:tint="@color/white"
+        android:focusable="true" />
+
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/routesList"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:padding="10dp"
+        android:layout_marginTop="10dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/destination" />-->
+        app:layout_constraintTop_toBottomOf="@id/duration" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -13,16 +13,19 @@ import androidx.navigation.fragment.findNavController
 import com.example.yandexmaps.R
 import com.example.yandexmaps.args.toArg
 import com.example.yandexmaps.databinding.FragmentMapsBinding
+import com.example.yandexmaps.ui.fragments.adapters.DrivingAdapter
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
 import com.example.yandexmaps.ui.helpers.DirectionHelper
 import com.example.yandexmaps.ui.helpers.PanoramaHelper
 import com.example.yandexmaps.ui.helpers.TrafficHelper
 import com.example.yandexmaps.ui.helpers.UserLocationHelper
 import com.example.yandexmaps.ui.models.SearchResponseModel
+import com.example.yandexmaps.utils.Utils
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.GeoObject
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.directions.driving.*
+import com.yandex.mapkit.directions.driving.Action
 import com.yandex.mapkit.geometry.BoundingBoxHelper
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.layers.GeoObjectTapListener
@@ -128,6 +131,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
     private val locationManager = MapKitFactory.getInstance().createLocationManager()
 
+    private lateinit var drivingAdapter: DrivingAdapter
+
     private val locationListener = object: LocationListener {
         override fun onLocationUpdated(point: Location) {
             Log.w(TAG, "user location ${point.position.latitude}, ${point.position.longitude}")
@@ -139,7 +144,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             Log.w(TAG, "user location status ${p0}")
         }
     }
-
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -156,6 +160,12 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             viewModel.userAdded = true
             return@UserLocationHelper true
         }
+
+        drivingAdapter = DrivingAdapter {
+
+        }
+
+        binding.directionLayout.routesList.adapter = drivingAdapter
 
         requestLocationPermission()
 
@@ -196,10 +206,10 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         when(viewModel.markerMode.value) {
             MARKER_MODE.PLACE -> {
-                binding.root.jumpToState(R.id.start)
+                binding.root.jumpToState(R.id.hiddenDirectionLayout)
             }
             MARKER_MODE.DIRECTION -> {
-                binding.root.jumpToState(R.id.end)
+                binding.root.jumpToState(R.id.openedDirectionLayout)
             }
         }
 
@@ -207,10 +217,12 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             when(viewModel.markerMode.value) {
                 MARKER_MODE.PLACE -> {
                     viewModel.markerMode.value = MARKER_MODE.DIRECTION
+                    binding.root.setTransition(R.id.openDirectionLayoutTransition)
                     binding.root.transitionToEnd()
                 }
                 MARKER_MODE.DIRECTION -> {
                     viewModel.markerMode.value = MARKER_MODE.PLACE
+                    binding.root.setTransition(R.id.openDirectionLayoutTransition)
                     binding.root.transitionToStart()
                 }
             }
@@ -239,9 +251,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         }
 
         binding.root.setTransitionListener(object: MotionLayout.TransitionListener {
-            var fromStart = true
-            var wasChanged = false
-
             override fun onTransitionStarted(
                 motionLayout: MotionLayout?,
                 startId: Int,
@@ -253,22 +262,19 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 startId: Int,
                 endId: Int,
                 progress: Float
-            ) {
-                if (!wasChanged) {
-                    if (fromStart && progress >= 0.5f) {
-                        binding.directionsButton.setImageResource(R.drawable.ic_baseline_arrow_back_24)
-                        wasChanged = true
-                    }
-                    if (!fromStart && progress <= 0.5f) {
-                        binding.directionsButton.setImageResource(R.drawable.ic_baseline_directions_24)
-                        wasChanged = true
-                    }
-                }
-            }
+            ) {}
 
             override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
-                wasChanged = false
-                fromStart = !fromStart
+                if(currentId == R.id.hiddenDirectionLayout) {
+                    binding.directionsButton.setImageResource(R.drawable.ic_baseline_directions_24)
+                } else {
+                    binding.directionsButton.setImageResource(R.drawable.ic_baseline_arrow_back_24)
+                }
+                if(currentId == R.id.openedDirectionLayout) {
+                    binding.directionLayout.routesButton.setImageResource(R.drawable.ic_baseline_keyboard_arrow_up_24)
+                } else if(currentId == R.id.expandedDirectionLayout) {
+                    binding.directionLayout.routesButton.setImageResource(R.drawable.ic_baseline_keyboard_arrow_down_24)
+                }
             }
 
             override fun onTransitionTrigger(
@@ -277,8 +283,17 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 positive: Boolean,
                 progress: Float
             ) {}
-
         })
+
+        binding.directionLayout.routesButton.setOnClickListener {
+            /*val action = MapsFragmentDirections.actionMapsFragmentToDirectionDetailFragment()
+            findNavController().navigate(action)*/
+            binding.root.setTransition(R.id.expandDirectionLayoutTransition)
+            if(binding.root.currentState == R.id.openedDirectionLayout)
+                binding.root.transitionToEnd()
+            else
+                binding.root.transitionToStart()
+        }
 
         observe()
     }
@@ -342,18 +357,23 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
     }
 
     private val selectedGeoObjectObserver = Observer<GeoObject?> {
-        if(it != null && viewModel.markerMode.value == MARKER_MODE.PLACE) {
-            val point = viewModel.selectedGeoObject.value?.geometry?.getOrNull(0)?.point
-            if(point != null) {
-                viewModel.destination.value = point
-                panoramaHelper.findNearest(point, {
-                    binding.panoramaButton.visibility = View.VISIBLE
-                }, {
+        if(it != null) {
+            val point = it.geometry.getOrNull(0)?.point
+            if(viewModel.markerMode.value == MARKER_MODE.PLACE) {
+                if(point != null) {
+                    panoramaHelper.findNearest(point, {
+                        binding.panoramaButton.visibility = View.VISIBLE
+                    }, {
+                        binding.panoramaButton.visibility = View.GONE
+                    })
+                }
+                else
                     binding.panoramaButton.visibility = View.GONE
-                })
+            } else {
+                if(point != null)
+                    viewModel.destination.value = point
             }
-            else
-                binding.panoramaButton.visibility = View.GONE
+
         } else {
             binding.panoramaButton.visibility = View.GONE
         }
@@ -451,49 +471,50 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 if(it.isEmpty()) {
                     binding.directionLayout.distance.visibility = View.GONE
                     binding.directionLayout.duration.visibility = View.GONE
+                    binding.directionLayout.routesButton.visibility = View.GONE
                     binding.directionLayout.directionNotFound.visibility = View.VISIBLE
                     return@submitRequest
                 }
 
+                val box = BoundingBoxHelper.getBounds(it.first().geometry)
+                var cameraPosition = binding.mapview.map.cameraPosition(box)
+                cameraPosition = CameraPosition(cameraPosition.target, cameraPosition.zoom - 0.8f, cameraPosition.azimuth, cameraPosition.tilt)
+                binding.mapview.map.move(cameraPosition, Animation(Animation.Type.SMOOTH, 1f), null)
+
                 binding.directionLayout.distance.visibility = View.VISIBLE
                 binding.directionLayout.duration.visibility = View.VISIBLE
+                binding.directionLayout.routesButton.visibility = View.VISIBLE
                 binding.directionLayout.directionNotFound.visibility = View.GONE
 
                 var distance = 0.0
                 var time = 0.0
+
+                val sections = mutableListOf<DrivingSectionMetadata>()
+
                 it.forEach { route ->
                     distance += route.metadata.weight.distance.value
                     time += route.metadata.weight.time.value
+                    Log.d(TAG, "it")
                     route.sections.forEach {
-                        //Log.e(TAG, "section ${it.metadata.annotation.descriptionText}")
-                        //Log.e(TAG, "section ${it.metadata}")
+                        sections.add(it.metadata)
                     }
                 }
-                val km = (distance / 1000).toInt()
-                val metres = (distance % 1000).toInt()
 
-                val h = (time / 3600).toInt()
-                val m = ((time % 3600) / 60).toInt()
-                val s = (time - h * 3600 - m * 60).toInt()
+                val totalDistance = Utils.formatDistance(requireContext(), distance)
+                val totalDuration = Utils.formatDuration(requireContext(), time)
 
-                val f: (Int, String) -> String = { n, u ->
-                    if(n > 0) "${n} ${u} " else ""
-                }
+                binding.directionLayout.distance.text = resources.getString(R.string.total_distance, totalDistance)
+                binding.directionLayout.duration.text = resources.getString(R.string.total_duration, totalDuration)
 
-                binding.directionLayout.distance.text = resources.getString(R.string.total_distance, f(km, "km") + f(metres, "m"))
-                binding.directionLayout.duration.text = resources.getString(R.string.total_duration, f(h, "h") + f(m, "min") + f(s, "s"))
-
-                if(it.isNotEmpty()) {
-                    val box = BoundingBoxHelper.getBounds(it.first().geometry)
-                    var cameraPosition = binding.mapview.map.cameraPosition(box)
-                    cameraPosition = CameraPosition(cameraPosition.target, cameraPosition.zoom - 0.8f, cameraPosition.azimuth, cameraPosition.tilt)
-                    binding.mapview.map.move(cameraPosition, Animation(Animation.Type.SMOOTH, 1f), null)
-                }
+                //viewModel.drivingRoutes.value = sections
+                drivingAdapter.submitList(sections)
             }, {
                 binding.directionLayout.progressBar.visibility = View.GONE
             })
         }
     }
+
+
 
 
     private fun coarseAndFineLocationPermissionsIsGranted(): Boolean {
@@ -509,7 +530,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         )
 
         if(coarseAndFineLocationPermissionsIsGranted()) {
-            locationManager.subscribeForLocationUpdates(0.0, 3000, 1.0, true, FilteringMode.ON, viewModel.locationUpdateListener)
+            locationManager.subscribeForLocationUpdates(0.0, 3000, 2.0, true, FilteringMode.ON, viewModel.locationUpdateListener)
             locationManager.requestSingleUpdate(locationListener)
             initViews()
         } else {

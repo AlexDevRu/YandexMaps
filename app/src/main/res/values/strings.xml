@@ -20,5 +20,23 @@
     <string name="total_distance">Total distance: %s</string>
     <string name="total_duration">Total duration: %s</string>
 
+    <string name="distance">Distance: %s</string>
+    <string name="duration">Duration: %s</string>
+
+    <string name="km">km</string>
+    <string name="m">m</string>
+
+    <string name="hours">h</string>
+    <string name="minutes">min</string>
+    <string name="seconds">s</string>
+
     <string name="direction_not_found">Direction is not found</string>
+
+    <string name="driving_description">drive %s</string>
+    <string name="exit_driving_description">exit to the %s</string>
+    <string name="fork_driving_description">choose a fork to the %s</string>
+
+    <string name="left">left</string>
+    <string name="right">right</string>
+    <string name="forward">forward</string>
 </resources>

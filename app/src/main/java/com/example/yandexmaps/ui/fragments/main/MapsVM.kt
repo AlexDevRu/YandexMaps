@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.example.yandexmaps.utils.SingleLiveEvent
 import com.yandex.mapkit.GeoObject
+import com.yandex.mapkit.directions.driving.DrivingSectionMetadata
 import com.yandex.mapkit.geometry.BoundingBox
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.location.Location
@@ -17,11 +18,14 @@ class MapsVM: ViewModel() {
 
     companion object {
         private const val TAG = "MapsVM"
+
+        private const val distanceForUpdateDirection = 1
     }
 
     val query = MutableLiveData<String>()
 
     var userLocation = Point()
+    private var lastKnownUserLocation: Point? = null
 
     val selectedGeoObject = MutableLiveData<GeoObject?>(null)
 
@@ -44,13 +48,15 @@ class MapsVM: ViewModel() {
 
     val origin = MutableLiveData<Point?>(null)
     val destination = MutableLiveData<Point?>(null)
-    var originAddress = MutableLiveData<String?>(null)
-    var destinationAddress = MutableLiveData<String?>(null)
+    val originAddress = MutableLiveData<String?>(null)
+    val destinationAddress = MutableLiveData<String?>(null)
+
+    val drivingRoutes = MutableLiveData<List<DrivingSectionMetadata>>()
 
     var userAdded = false
 
-    var markerMode = MutableLiveData(MARKER_MODE.PLACE)
-    var directionMarkerType = MutableLiveData(DIRECTION_MARKER_TYPE.DESTINATION)
+    val markerMode = MutableLiveData(MARKER_MODE.PLACE)
+    val directionMarkerType = MutableLiveData(DIRECTION_MARKER_TYPE.DESTINATION)
 
     var cameraPosition: CameraPosition? = null
 
@@ -64,13 +70,16 @@ class MapsVM: ViewModel() {
             val lng = location.position.longitude
 
             Log.w(TAG, "lat=${lat} " + "lon=${lng}")
+            lastKnownUserLocation = Point(userLocation.latitude, userLocation.longitude)
             userLocation = location.position
 
-            syncDirectionPoint()
+            //syncDirectionPoint()
         }
     }
 
     fun syncDirectionPoint() {
+
+
         if(directionAction.value == DIRECTION_ACTION.BIND_MY_LOCATION) {
             if(bindedMarkerType == DIRECTION_MARKER_TYPE.ORIGIN) {
                 origin.value = userLocation
@@ -95,10 +104,6 @@ class MapsVM: ViewModel() {
         }
         directionAction.value = action
         syncDirectionPoint()
-    }
-
-    init {
-
     }
 }
 

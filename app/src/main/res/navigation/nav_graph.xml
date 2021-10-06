@@ -17,7 +17,11 @@
             app:popExitAnim="@anim/slide_out_right"/>
         <action
             android:id="@+id/action_mapsFragment_to_panoramaFragment"
-            app:destination="@id/panoramaFragment">
+            app:destination="@id/panoramaFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right">
             <argument
                 android:name="point"
                 app:argType="com.example.yandexmaps.args.PointArg" />
