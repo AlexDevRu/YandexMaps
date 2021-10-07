@@ -83,7 +83,7 @@
 
     <include
         android:id="@+id/directionLayout"
-        layout="@layout/fragment_directions"
+        layout="@layout/layout_directions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent" />

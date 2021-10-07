@@ -14,6 +14,7 @@ import com.example.yandexmaps.R
 import com.example.yandexmaps.databinding.FragmentSearchBinding
 import com.example.yandexmaps.ui.fragments.adapters.SuggestionsAdapter
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
+import com.example.yandexmaps.ui.fragments.main.MapsFragment
 import com.example.yandexmaps.ui.fragments.main.MapsVM
 import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.yandex.mapkit.geometry.Geometry
@@ -134,9 +135,15 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
             SearchOptions(),
             object: Session.SearchListener {
                 override fun onSearchResponse(response: Response) {
+                    val obj = response.collection.children.first().obj
+                    val metadata = obj?.metadataContainer?.getItem(BusinessObjectMetadata::class.java)
+                    Log.e(TAG, "address ${metadata?.address?.formattedAddress}")
+                    Log.e(TAG, "working hours ${metadata?.workingHours?.availabilities?.firstOrNull()?.days} ${metadata?.workingHours?.availabilities?.firstOrNull()?.timeRanges?.firstOrNull()?.from}")
+
                     viewModel.searchResponse.value = SearchResponseModel(response, 1)
                     //val action = SearchFragmentDirections.actionSearchFragmentToMapsFragment()
                     //findNavController().navigate(action)
+
                     findNavController().navigateUp()
                 }
 

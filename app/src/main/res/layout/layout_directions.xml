@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/directionLayout"
     android:background="@color/white"
     android:paddingStart="6dp"
     android:paddingEnd="6dp"
@@ -40,6 +41,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
+    <Spinner
+        android:id="@+id/directionTypeSpinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/destination"/>
+
     <ProgressBar
         android:id="@+id/progressBar"
         android:visibility="gone"
@@ -48,7 +57,7 @@
         app:layout_constraintTop_toTopOf="@id/distance"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/destination" />
+        app:layout_constraintTop_toBottomOf="@id/directionTypeSpinner" />
 
     <TextView
         android:id="@+id/distance"
@@ -60,7 +69,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/routesButton"
-        app:layout_constraintTop_toBottomOf="@id/destination"/>
+        app:layout_constraintTop_toBottomOf="@id/directionTypeSpinner"/>
 
     <TextView
         android:id="@+id/duration"

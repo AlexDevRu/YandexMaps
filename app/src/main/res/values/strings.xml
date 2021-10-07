@@ -39,4 +39,9 @@
     <string name="left">left</string>
     <string name="right">right</string>
     <string name="forward">forward</string>
+
+    <string-array name="direction_types">
+        <item>driving</item>
+        <item>mass transit</item>
+    </string-array>
 </resources>

@@ -105,10 +105,19 @@ class MapsVM: ViewModel() {
         directionAction.value = action
         syncDirectionPoint()
     }
+
+    var directionType = MutableLiveData(DIRECTION_TYPE.DRIVING)
 }
 
 enum class MARKER_MODE {
-    PLACE, DIRECTION
+    PLACE {
+        override fun toggle() = DIRECTION
+    },
+    DIRECTION {
+        override fun toggle() = PLACE
+    };
+
+    abstract fun toggle(): MARKER_MODE
 }
 
 enum class DIRECTION_MARKER_TYPE {
@@ -117,4 +126,8 @@ enum class DIRECTION_MARKER_TYPE {
 
 enum class DIRECTION_ACTION {
     BIND_MY_LOCATION, CHOOSE_ON_MAP
+}
+
+enum class DIRECTION_TYPE {
+    DRIVING, MASS_TRANSIT
 }
