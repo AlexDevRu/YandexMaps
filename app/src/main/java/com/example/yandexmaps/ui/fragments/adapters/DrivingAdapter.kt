@@ -91,6 +91,6 @@ class DrivingAdapter(private val onClick: (DrivingSectionMetadata) -> Unit)
     }
 
     override fun onBindViewHolder(holder: DrivingSectionMetadataViewHolder, position: Int) {
-        getItem(position).let { holder.bind(it, position == itemCount - 1) }
+        getItem(position).let { holder.bind(it, position == (itemCount - 1)) }
     }
 }
