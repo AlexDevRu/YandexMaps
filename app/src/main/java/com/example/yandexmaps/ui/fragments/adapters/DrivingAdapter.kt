@@ -27,8 +27,14 @@ class DrivingAdapter(private val onClick: (DrivingSectionMetadata) -> Unit)
             binding.duration.text = metadata.weight.timeWithTraffic.text
 
             binding.textView.text = when(metadata.annotation.action) {
-                Action.LEFT, Action.SLIGHT_LEFT -> itemView.context.getString(R.string.driving_description, getString(R.string.left))
-                Action.RIGHT, Action.SLIGHT_RIGHT -> itemView.context.getString(R.string.driving_description, getString(R.string.right))
+                Action.LEFT,
+                Action.SLIGHT_LEFT,
+                Action.UTURN_LEFT -> itemView.context.getString(R.string.driving_description, getString(R.string.left))
+
+                Action.RIGHT,
+                Action.SLIGHT_RIGHT,
+                Action.UTURN_RIGHT -> itemView.context.getString(R.string.driving_description, getString(R.string.right))
+
                 Action.EXIT_LEFT -> itemView.context.getString(R.string.exit_driving_description, getString(R.string.left))
                 Action.EXIT_RIGHT -> itemView.context.getString(R.string.exit_driving_description, getString(R.string.right))
                 Action.STRAIGHT -> itemView.context.getString(R.string.driving_description, getString(R.string.forward))
@@ -39,8 +45,16 @@ class DrivingAdapter(private val onClick: (DrivingSectionMetadata) -> Unit)
 
             binding.icon.setImageResource(
                 when(metadata.annotation.action) {
-                    Action.LEFT, Action.SLIGHT_LEFT, Action.EXIT_LEFT -> R.drawable.ic_baseline_arrow_back_24
-                    Action.RIGHT, Action.SLIGHT_RIGHT, Action.EXIT_RIGHT -> R.drawable.ic_baseline_arrow_forward_24
+                    Action.LEFT,
+                    Action.SLIGHT_LEFT,
+                    Action.EXIT_LEFT,
+                    Action.UTURN_LEFT -> R.drawable.ic_baseline_arrow_back_24
+
+                    Action.RIGHT,
+                    Action.SLIGHT_RIGHT,
+                    Action.EXIT_RIGHT,
+                    Action.UTURN_RIGHT -> R.drawable.ic_baseline_arrow_forward_24
+
                     Action.STRAIGHT -> R.drawable.ic_baseline_arrow_upward_24
                     Action.FORK_LEFT -> R.drawable.fork_right
                     Action.FORK_RIGHT -> R.drawable.fork_right

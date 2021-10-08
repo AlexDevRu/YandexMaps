@@ -20,7 +20,8 @@
         motion:duration="400">
         <KeyFrameSet>
         </KeyFrameSet>
-
+        <OnSwipe motion:touchAnchorId="@id/directionLayout" motion:touchRegionId="@id/directionLayout"
+            motion:dragDirection="dragUp" motion:touchAnchorSide="top" />
     </Transition>
 
     <ConstraintSet android:id="@+id/hiddenDirectionLayout">

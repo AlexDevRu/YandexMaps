@@ -202,31 +202,34 @@ class DirectionHelper(private val mapView: MapView) {
             knownVehicleTypes.add("minibus")
             knownVehicleTypes.add("railway")
             for (transport in data.transports!!) {
-                Log.e("asd", "transport " + transport.line.vehicleTypes + ", ")
-                val sectionVehicleType = getVehicleType(transport, knownVehicleTypes)
-                if (sectionVehicleType == "bus") {
-                    polylineMapObject.strokeColor = Color.CYAN
-                    return
-                } else if (sectionVehicleType == "tramway") {
-                    polylineMapObject.strokeColor = Color.RED
-                    return
-                } else if (sectionVehicleType == "trolleybus") {
-                    polylineMapObject.strokeColor = Color.BLUE
-                    return
-                } else if (sectionVehicleType == "minibus") {
-                    polylineMapObject.strokeColor = Color.MAGENTA
-                    return
-                } else if (sectionVehicleType == "railway") {
-                    polylineMapObject.strokeColor = Color.GREEN
-                    return
+                when (getVehicleType(transport, knownVehicleTypes)) {
+                    "bus" -> {
+                        polylineMapObject.strokeColor = Color.CYAN
+                        return
+                    }
+                    "tramway" -> {
+                        polylineMapObject.strokeColor = Color.RED
+                        return
+                    }
+                    "trolleybus" -> {
+                        polylineMapObject.strokeColor = Color.BLUE
+                        return
+                    }
+                    "minibus" -> {
+                        polylineMapObject.strokeColor = Color.MAGENTA
+                        return
+                    }
+                    "railway" -> {
+                        polylineMapObject.strokeColor = Color.GREEN
+                        return
+                    }
                 }
             }
-            polylineMapObject.strokeColor = -0xffff01 // Blue
+            polylineMapObject.strokeColor = Color.YELLOW
         } else {
-            Log.e("asd", "default")
             // This is not a public transport ride section
             // In this example let us draw it in black
-            polylineMapObject.strokeColor = -0x1000000 // Black
+            polylineMapObject.strokeColor = Color.BLACK
         }
     }
 

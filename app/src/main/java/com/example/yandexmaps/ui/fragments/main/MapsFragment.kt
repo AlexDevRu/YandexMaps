@@ -17,6 +17,7 @@ import com.example.yandexmaps.R
 import com.example.yandexmaps.args.toArg
 import com.example.yandexmaps.databinding.FragmentMapsBinding
 import com.example.yandexmaps.ui.fragments.adapters.DrivingAdapter
+import com.example.yandexmaps.ui.fragments.adapters.MassTransitAdapter
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
 import com.example.yandexmaps.ui.fragments.search.SearchFragment
 import com.example.yandexmaps.ui.helpers.DirectionHelper
@@ -140,6 +141,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
     private val locationManager = MapKitFactory.getInstance().createLocationManager()
 
     private lateinit var drivingAdapter: DrivingAdapter
+    private lateinit var massTransitAdapter: MassTransitAdapter
 
     private val locationListener = object: LocationListener {
         override fun onLocationUpdated(point: Location) {
@@ -173,7 +175,9 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         }
 
-        binding.directionLayout.routesList.adapter = drivingAdapter
+        massTransitAdapter = MassTransitAdapter {
+
+        }
 
         requestLocationPermission()
 
@@ -403,8 +407,10 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             if(viewModel.markerMode.value == MARKER_MODE.PLACE) {
                 if(point != null) {
                     panoramaHelper.findNearest(point, {
+                        Log.e(TAG, "panorama find")
                         binding.panoramaButton.visibility = View.VISIBLE
                     }, {
+                        Log.e(TAG, "panorama not find")
                         binding.panoramaButton.visibility = View.GONE
                     })
 
@@ -556,6 +562,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             binding.directionLayout.distance.visibility = View.GONE
             binding.directionLayout.duration.visibility = View.GONE
             binding.directionLayout.routesButton.visibility = View.GONE
+            binding.directionLayout.routesList.visibility = View.GONE
             binding.directionLayout.directionNotFound.visibility = View.VISIBLE
         }
 
@@ -580,6 +587,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         binding.directionLayout.distance.visibility = View.VISIBLE
         binding.directionLayout.duration.visibility = View.VISIBLE
         binding.directionLayout.routesButton.visibility = View.VISIBLE
+        binding.directionLayout.routesList.visibility = View.VISIBLE
         binding.directionLayout.directionNotFound.visibility = View.GONE
 
         var distance = 0.0
@@ -599,8 +607,12 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         binding.directionLayout.distance.text = resources.getString(R.string.total_distance, totalDistance)
         binding.directionLayout.duration.text = resources.getString(R.string.total_duration, totalDuration)
 
+        binding.directionLayout.routesList.adapter = massTransitAdapter
+
         //viewModel.drivingRoutes.value = sections
-        //drivingAdapter.submitList(sections)
+        massTransitAdapter.submitList(routes.first().sections.filter {
+            !(it.metadata.weight.walkingDistance.value.toInt() == 0 && it.metadata.data.transports == null)
+        })
     }
 
     private fun onDrivingResponse(routes: List<DrivingRoute>) {
@@ -616,6 +628,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         binding.directionLayout.distance.visibility = View.VISIBLE
         binding.directionLayout.duration.visibility = View.VISIBLE
         binding.directionLayout.routesButton.visibility = View.VISIBLE
+        binding.directionLayout.routesList.visibility = View.VISIBLE
         binding.directionLayout.directionNotFound.visibility = View.GONE
 
         var distance = 0.0
@@ -636,6 +649,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         binding.directionLayout.distance.text = resources.getString(R.string.total_distance, totalDistance)
         binding.directionLayout.duration.text = resources.getString(R.string.total_duration, totalDuration)
+
+        binding.directionLayout.routesList.adapter = drivingAdapter
 
         //viewModel.drivingRoutes.value = sections
         drivingAdapter.submitList(sections)
