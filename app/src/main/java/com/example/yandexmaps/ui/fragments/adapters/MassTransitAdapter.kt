@@ -59,8 +59,8 @@ class MassTransitAdapter(private val onClick: (Section) -> Unit)
             } else {
                 binding.transportNumber.visibility = View.GONE
                 binding.transportIcon.setImageResource(R.drawable.walk)
-                binding.fromLabel.text = "Distance"
-                binding.toLabel.text = "Duration"
+                binding.fromLabel.text = itemView.context.resources.getString(R.string.distance)
+                binding.toLabel.text = itemView.context.resources.getString(R.string.distance)
                 binding.fromStopName.text = section.metadata.weight.walkingDistance.text
                 binding.toStopName.text = section.metadata.weight.time.text
             }

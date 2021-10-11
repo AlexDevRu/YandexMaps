@@ -20,8 +20,11 @@
     <string name="total_distance">Total distance: %s</string>
     <string name="total_duration">Total duration: %s</string>
 
-    <string name="distance">Distance: %s</string>
-    <string name="duration">Duration: %s</string>
+    <string name="section_distance">Distance: %s</string>
+    <string name="section_duration">Duration: %s</string>
+
+    <string name="distance">Distance</string>
+    <string name="duration">Duration</string>
 
     <string name="km">km</string>
     <string name="m">m</string>

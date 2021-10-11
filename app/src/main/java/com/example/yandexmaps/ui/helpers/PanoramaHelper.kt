@@ -7,24 +7,13 @@ import com.yandex.runtime.Error
 
 class PanoramaHelper {
 
+    private lateinit var searchSession: PanoramaService.SearchSession
     private var panoramaService = PlacesFactory.getInstance().createPanoramaService()
 
-    private var onSuccess: (String) -> Unit = {}
-    private var onFailure: (Error) -> Unit = {}
+    private lateinit var panoramaListener: PanoramaService.SearchListener
 
-    private val panoramaListener = object: PanoramaService.SearchListener {
-        override fun onPanoramaSearchResult(p0: String) {
-            onSuccess(p0)
-        }
-
-        override fun onPanoramaSearchError(error: Error) {
-            onFailure(error)
-        }
-    }
-
-    fun findNearest(point: Point, onSuccess: (String) -> Unit, onFailure: (Error) -> Unit) {
-        this.onSuccess = onSuccess
-        this.onFailure = onFailure
-        panoramaService.findNearest(point, panoramaListener)
+    fun findNearest(point: Point, listener: PanoramaService.SearchListener) {
+        panoramaListener = listener
+        searchSession = panoramaService.findNearest(point, panoramaListener)
     }
 }

@@ -42,12 +42,20 @@ class DirectionHelper(private val mapView: MapView) {
     private val drivingRouteCollection = mapView.map.mapObjects.addCollection()
     private val massTransitRouteCollection = mapView.map.mapObjects.addCollection()
 
-    private var mtRouter = TransportFactory.getInstance().createMasstransitRouter()
+    private val mtRouter = TransportFactory.getInstance().createMasstransitRouter()
 
     fun updateVisibility(isVisible: Boolean) {
         drivingRouteCollection.isVisible = isVisible
         massTransitRouteCollection.isVisible = isVisible
     }
+
+    /*fun deleteDrivingRoutes() {
+        drivingRouteCollection.clear()
+    }
+
+    fun deleteMassTransitRoutes() {
+        massTransitRouteCollection.clear()
+    }*/
 
 
     private val drivingRouteListener = object: DrivingSession.DrivingRouteListener {

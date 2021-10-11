@@ -6,20 +6,19 @@ import androidx.lifecycle.ViewModel
 import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.example.yandexmaps.utils.SingleLiveEvent
 import com.yandex.mapkit.GeoObject
-import com.yandex.mapkit.directions.driving.DrivingSectionMetadata
+import com.yandex.mapkit.directions.driving.DrivingRoute
 import com.yandex.mapkit.geometry.BoundingBox
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.location.Location
 import com.yandex.mapkit.location.LocationListener
 import com.yandex.mapkit.location.LocationStatus
 import com.yandex.mapkit.map.CameraPosition
+import com.yandex.mapkit.transport.masstransit.Route
 
 class MapsVM: ViewModel() {
 
     companion object {
         private const val TAG = "MapsVM"
-
-        private const val distanceForUpdateDirection = 1
     }
 
     val query = MutableLiveData<String>()
@@ -51,7 +50,11 @@ class MapsVM: ViewModel() {
     val originAddress = MutableLiveData<String?>(null)
     val destinationAddress = MutableLiveData<String?>(null)
 
-    val drivingRoutes = MutableLiveData<List<DrivingSectionMetadata>>()
+    val drivingRoutes = MutableLiveData<List<DrivingRoute>?>()
+    val massTransitRoutes = MutableLiveData<List<Route>?>()
+
+    var directionBuilded = false
+    var directionBuildedd = MutableLiveData(false)
 
     var userAdded = false
 
@@ -59,6 +62,9 @@ class MapsVM: ViewModel() {
     val directionMarkerType = MutableLiveData(DIRECTION_MARKER_TYPE.DESTINATION)
 
     var cameraPosition: CameraPosition? = null
+
+
+    var directionShouldBeReload = false
 
 
     val locationUpdateListener = object : LocationListener {
@@ -73,11 +79,13 @@ class MapsVM: ViewModel() {
             lastKnownUserLocation = Point(userLocation.latitude, userLocation.longitude)
             userLocation = location.position
 
+            directionShouldBeReload = lat != lastKnownUserLocation!!.latitude || lng != lastKnownUserLocation!!.longitude
+
             //syncDirectionPoint()
         }
     }
 
-    fun syncDirectionPoint() {
+    private fun syncDirectionPoint() {
 
 
         if(directionAction.value == DIRECTION_ACTION.BIND_MY_LOCATION) {

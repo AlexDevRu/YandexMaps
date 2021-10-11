@@ -65,10 +65,9 @@
         android:textSize="18sp"
         android:textStyle="bold"
         tools:text="@string/total_distance"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/routesButton"
         app:layout_constraintTop_toBottomOf="@id/directionTypeSpinner"/>
 
     <TextView
@@ -76,10 +75,9 @@
         android:textSize="18sp"
         android:textStyle="bold"
         tools:text="@string/total_duration"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/routesButton"
         app:layout_constraintTop_toBottomOf="@id/distance"/>
 
     <TextView
@@ -92,21 +90,6 @@
         android:layout_height="wrap_content"
         android:textColor="@color/red"
         app:layout_constraintTop_toBottomOf="@id/duration"/>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/routesButton"
-        android:visibility="gone"
-        app:fabSize="mini"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        app:srcCompat="@android:drawable/ic_input_add"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/distance"
-        app:layout_constraintBottom_toBottomOf="@id/duration"
-        android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
-        app:tint="@color/white"
-        android:focusable="true" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/routesList"
