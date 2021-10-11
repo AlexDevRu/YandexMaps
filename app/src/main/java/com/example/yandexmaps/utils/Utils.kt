@@ -1,7 +1,13 @@
 package com.example.yandexmaps.utils
 
 import android.content.Context
+import android.content.Context.INPUT_METHOD_SERVICE
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import com.example.yandexmaps.R
+
+
+
 
 object Utils {
 
@@ -28,4 +34,9 @@ object Utils {
 
         return f(h, hoursUnit) + f(m, minutesUnit) + f(s, secondsUnit)
     }
+}
+
+fun View.hideKeyBoard() {
+    val imm = context.getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager?
+    imm?.hideSoftInputFromWindow(windowToken, 0)
 }

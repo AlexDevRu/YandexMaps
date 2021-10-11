@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import android.view.MotionEvent
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
@@ -12,8 +11,6 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.Observer
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.yandexmaps.R
 import com.example.yandexmaps.args.toArg
@@ -21,18 +18,14 @@ import com.example.yandexmaps.databinding.FragmentMapsBinding
 import com.example.yandexmaps.ui.fragments.adapters.DrivingAdapter
 import com.example.yandexmaps.ui.fragments.adapters.MassTransitAdapter
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
-import com.example.yandexmaps.ui.fragments.search.SearchFragment
 import com.example.yandexmaps.ui.helpers.DirectionHelper
 import com.example.yandexmaps.ui.helpers.PanoramaHelper
 import com.example.yandexmaps.ui.helpers.TrafficHelper
 import com.example.yandexmaps.ui.helpers.UserLocationHelper
-import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.example.yandexmaps.utils.Utils
 import com.yandex.mapkit.Animation
-import com.yandex.mapkit.GeoObject
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.directions.driving.*
-import com.yandex.mapkit.directions.driving.Action
 import com.yandex.mapkit.geometry.BoundingBox
 import com.yandex.mapkit.geometry.BoundingBoxHelper
 import com.yandex.mapkit.geometry.Point
@@ -48,13 +41,8 @@ import com.yandex.mapkit.map.*
 import com.yandex.mapkit.map.Map
 import com.yandex.mapkit.places.panorama.PanoramaService
 import com.yandex.mapkit.search.*
-import com.yandex.mapkit.transport.masstransit.Route
-import com.yandex.mapkit.transport.masstransit.RouteMetadata
-import com.yandex.mapkit.transport.masstransit.SectionMetadata
 import com.yandex.runtime.Error
 import com.yandex.runtime.image.ImageProvider
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 
@@ -98,13 +86,14 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
     }
 
     private val geoObjectTapListener = GeoObjectTapListener {
-        viewModel.selectedGeoObject.value = it.geoObject
 
         val selectionMetadata = it.geoObject
             .metadataContainer
             .getItem(GeoObjectSelectionMetadata::class.java)
 
         val point = it.geoObject.geometry.firstOrNull()?.point
+
+        viewModel.selectedGeoObject.value = it.geoObject
 
         if(viewModel.markerMode.value == MARKER_MODE.PLACE) {
             Log.w(TAG, "selected point=${point?.latitude},${point?.longitude}; markerMode=${viewModel.markerMode.value}")
@@ -303,6 +292,14 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             ) {}
         })
 
+        if(viewModel.selectedGeoObject.value != null) {
+            val selectionMetadata = viewModel.selectedGeoObject.value!!
+                .metadataContainer
+                .getItem(GeoObjectSelectionMetadata::class.java)
+
+            binding.mapview.map.selectGeoObject(selectionMetadata.id, selectionMetadata.layerId)
+        }
+
         observe()
     }
 
@@ -340,7 +337,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         override fun onPanoramaSearchResult(p0: String) {
             Log.e(TAG, "panorama find")
             binding.panoramaButton.visibility = View.VISIBLE
-            binding.button.visibility = View.VISIBLE
             Toast.makeText(requireContext(), "panorama find", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "panorama button visible ${binding.panoramaButton.visibility == View.VISIBLE}")
         }
@@ -499,12 +495,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             }
         }
 
-        viewModel.directionBuildedd.observe(viewLifecycleOwner) {
-            if(it && viewModel.markerMode.value == MARKER_MODE.DIRECTION) {
-                binding.root.setTransition(R.id.expandDirectionLayoutTransition)
-            }
-        }
-
         viewModel.drivingRoutes.observe(viewLifecycleOwner) drivingRoutes@ { routes ->
             if(routes == null) return@drivingRoutes
 
@@ -514,8 +504,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 val boundingBox = BoundingBoxHelper.getBounds(routes.first().geometry)
                 boundCameraToDirection(boundingBox)
             }
-
-            updateDirectionErrorVisibility(false)
 
             var distance = 0.0
             var time = 0.0
@@ -544,8 +532,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 val boundingBox = BoundingBoxHelper.getBounds(routes.first().geometry)
                 boundCameraToDirection(boundingBox)
             }
-
-            updateDirectionErrorVisibility(false)
 
             var distance = 0.0
             var time = 0.0

@@ -14,11 +14,10 @@ import com.example.yandexmaps.R
 import com.example.yandexmaps.databinding.FragmentSearchBinding
 import com.example.yandexmaps.ui.fragments.adapters.SuggestionsAdapter
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
-import com.example.yandexmaps.ui.fragments.main.MapsFragment
 import com.example.yandexmaps.ui.fragments.main.MapsVM
 import com.example.yandexmaps.ui.models.SearchResponseModel
+import com.example.yandexmaps.utils.hideKeyBoard
 import com.yandex.mapkit.geometry.Geometry
-import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.search.*
 import com.yandex.runtime.Error
 import com.yandex.runtime.network.NetworkError
@@ -59,6 +58,11 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
             val text = list?.firstOrNull()
             binding.suggestQuery.setQuery(text.orEmpty(), false)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.root.requestFocus()
     }
 
 
@@ -141,8 +145,8 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
                     Log.e(TAG, "working hours ${metadata?.workingHours?.availabilities?.firstOrNull()?.days} ${metadata?.workingHours?.availabilities?.firstOrNull()?.timeRanges?.firstOrNull()?.from}")
 
                     viewModel.searchResponse.value = SearchResponseModel(response, 1)
-                    //val action = SearchFragmentDirections.actionSearchFragmentToMapsFragment()
-                    //findNavController().navigate(action)
+
+                    binding.suggestQuery.hideKeyBoard()
 
                     findNavController().navigateUp()
                 }

@@ -54,7 +54,6 @@ class MapsVM: ViewModel() {
     val massTransitRoutes = MutableLiveData<List<Route>?>()
 
     var directionBuilded = false
-    var directionBuildedd = MutableLiveData(false)
 
     var userAdded = false
 
