@@ -53,7 +53,8 @@ class MapsVM: ViewModel() {
     val drivingRoutes = MutableLiveData<List<DrivingRoute>?>()
     val massTransitRoutes = MutableLiveData<List<Route>?>()
 
-    var directionBuilded = false
+    val directionBuilded
+        get() = !drivingRoutes.value.isNullOrEmpty() && !massTransitRoutes.value.isNullOrEmpty()
 
     var userAdded = false
 

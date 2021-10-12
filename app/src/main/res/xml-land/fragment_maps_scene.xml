@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<MotionScene 
+<MotionScene
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:motion="http://schemas.android.com/apk/res-auto"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:motion="http://schemas.android.com/apk/res-auto">
 
     <Transition
         android:id="@+id/openDirectionLayoutTransition"
         motion:constraintSetEnd="@id/openedDirectionLayout"
         motion:constraintSetStart="@id/hiddenDirectionLayout"
         motion:duration="400">
-       <KeyFrameSet>
-       </KeyFrameSet>
+        <KeyFrameSet>
+        </KeyFrameSet>
     </Transition>
 
     <Transition
@@ -21,32 +20,23 @@
         <KeyFrameSet>
         </KeyFrameSet>
         <OnSwipe motion:touchAnchorId="@id/directionLayout" motion:touchRegionId="@id/directionLayout"
-            motion:dragDirection="dragUp" motion:touchAnchorSide="top" />
+            motion:dragDirection="dragEnd" />
     </Transition>
 
     <ConstraintSet android:id="@+id/hiddenDirectionLayout">
         <Constraint
             android:id="@+id/directionLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            motion:layout_constraintTop_toBottomOf="parent" />
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            motion:layout_constraintWidth_percent=".4"
+            motion:layout_constraintEnd_toStartOf="parent" />
         <Constraint
             android:id="@+id/directionsButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
             motion:layout_constraintBottom_toTopOf="@id/myLocationButton"
-            motion:layout_constraintEnd_toEndOf="@id/myLocationButton">
-
-        </Constraint>
-        <Constraint
-            android:id="@+id/searchButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            motion:layout_constraintBottom_toTopOf="@id/directionLayout"
-            motion:layout_constraintEnd_toEndOf="parent" />
+            motion:layout_constraintEnd_toEndOf="@id/myLocationButton" />
         <Constraint
             android:id="@+id/panoramaButton"
             android:layout_width="wrap_content"
@@ -55,30 +45,21 @@
             android:layout_marginStart="10dp"
             motion:layout_constraintBottom_toTopOf="@id/directionsButton"
             motion:layout_constraintEnd_toEndOf="@id/directionsButton" />
+        <Constraint
+            android:id="@+id/routesList"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            motion:layout_constraintEnd_toStartOf="parent"
+            motion:layout_constraintWidth_percent=".5"/>
     </ConstraintSet>
 
     <ConstraintSet android:id="@+id/openedDirectionLayout">
         <Constraint
             android:id="@+id/directionLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            motion:layout_constraintBottom_toBottomOf="parent" />
-        <Constraint
-            android:id="@+id/directionsButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:layout_marginStart="10dp"
-            motion:layout_constraintBottom_toTopOf="@id/directionLayout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            motion:layout_constraintWidth_percent=".4"
             motion:layout_constraintStart_toStartOf="parent" />
-        <Constraint
-            android:id="@+id/searchButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            motion:layout_constraintBottom_toTopOf="@id/directionLayout"
-            motion:layout_constraintEnd_toEndOf="parent" />
         <Constraint
             android:id="@+id/panoramaButton"
             android:layout_width="wrap_content"
@@ -87,32 +68,52 @@
             android:layout_marginStart="10dp"
             motion:layout_constraintBottom_toTopOf="@id/myLocationButton"
             motion:layout_constraintEnd_toEndOf="@id/myLocationButton" />
-    </ConstraintSet>
-
-    <ConstraintSet android:id="@+id/expandedDirectionLayout">
-        <Constraint
-            android:id="@+id/directionLayout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            motion:layout_constraintTop_toTopOf="parent"
-            motion:layout_constraintBottom_toBottomOf="parent" />
         <Constraint
             android:id="@+id/directionsButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
+            android:layout_marginTop="10dp"
             android:layout_marginStart="10dp"
-            motion:layout_constraintBottom_toTopOf="@id/directionLayout"
-            motion:layout_constraintStart_toStartOf="@id/directionLayout">
-        </Constraint>
+            motion:layout_constraintTop_toBottomOf="@id/wrapper"
+            motion:layout_constraintStart_toEndOf="@id/directionLayout" />
+        <Constraint
+            android:id="@+id/routesList"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            motion:layout_constraintEnd_toStartOf="parent"
+            motion:layout_constraintWidth_percent=".5"/>
         <Constraint
             android:id="@+id/searchButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="16dp"
-            motion:layout_constraintBottom_toTopOf="@id/directionLayout"
+            motion:layout_constraintBottom_toBottomOf="parent"
             motion:layout_constraintEnd_toEndOf="parent" />
+    </ConstraintSet>
+
+    <ConstraintSet android:id="@+id/expandedDirectionLayout">
+        <Constraint
+            android:id="@+id/directionLayout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            motion:layout_constraintStart_toEndOf="@id/routesList"
+            motion:layout_constraintEnd_toEndOf="parent"/>
+        <Constraint
+            android:id="@+id/directionsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="10dp"
+            motion:layout_constraintTop_toBottomOf="@id/wrapper"
+            motion:layout_constraintStart_toEndOf="@id/directionLayout">
+        </Constraint>
+        <Constraint
+            android:id="@+id/routesList"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintWidth_percent=".5"/>
         <Constraint
             android:id="@+id/panoramaButton"
             android:layout_width="wrap_content"
@@ -120,6 +121,13 @@
             android:layout_marginBottom="10dp"
             android:layout_marginStart="10dp"
             motion:layout_constraintBottom_toTopOf="@id/myLocationButton"
-            motion:layout_constraintEnd_toEndOf="@id/myLocationButton"/>
+            motion:layout_constraintEnd_toEndOf="@id/myLocationButton" />
+        <Constraint
+            android:id="@+id/searchButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintStart_toEndOf="parent" />
     </ConstraintSet>
 </MotionScene>

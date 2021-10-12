@@ -8,8 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.yandexmaps.R
-import com.example.yandexmaps.databinding.ViewholderDrivingDescriptionBinding
-import com.example.yandexmaps.utils.Utils
+import com.example.yandexmaps.databinding.ViewholderDrivingBinding
 import com.yandex.mapkit.directions.driving.Action
 import com.yandex.mapkit.directions.driving.DrivingSectionMetadata
 
@@ -18,7 +17,7 @@ class DrivingAdapter(private val onClick: (DrivingSectionMetadata) -> Unit)
     : ListAdapter<DrivingSectionMetadata, DrivingAdapter.DrivingSectionMetadataViewHolder>(DrivingSectionMetadataDiffUtil()) {
 
 
-    inner class DrivingSectionMetadataViewHolder(private val binding: ViewholderDrivingDescriptionBinding)
+    inner class DrivingSectionMetadataViewHolder(private val binding: ViewholderDrivingBinding)
         : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(metadata: DrivingSectionMetadata, last: Boolean) {
@@ -66,7 +65,9 @@ class DrivingAdapter(private val onClick: (DrivingSectionMetadata) -> Unit)
                 binding.icon.scaleX = -1f
             }
 
-            if(!last) {
+            if(last) {
+                binding.root.backgroundTintList = ContextCompat.getColorStateList(itemView.context, R.color.white)
+            } else {
                 binding.root.background = ContextCompat.getDrawable(itemView.context, R.drawable.viewholder_driving_bg)
             }
         }
@@ -95,7 +96,7 @@ class DrivingAdapter(private val onClick: (DrivingSectionMetadata) -> Unit)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DrivingSectionMetadataViewHolder {
-        val binding = ViewholderDrivingDescriptionBinding.inflate(
+        val binding = ViewholderDrivingBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false

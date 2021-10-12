@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.app.ActivityCompat
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.RecyclerView
 import com.example.yandexmaps.R
 import com.example.yandexmaps.args.toArg
 import com.example.yandexmaps.databinding.FragmentMapsBinding
@@ -76,11 +77,10 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
     }
 
     private fun setDirectionMarkerByPoint(point: Point) {
+        viewModel.directionShouldBeReload = true
         if(viewModel.directionMarkerType.value == DIRECTION_MARKER_TYPE.ORIGIN) {
-            viewModel.directionShouldBeReload = true
             viewModel.origin.value = point
         } else if(viewModel.directionMarkerType.value == DIRECTION_MARKER_TYPE.DESTINATION) {
-            viewModel.directionShouldBeReload = true
             viewModel.destination.value = point
         }
     }
@@ -151,6 +151,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         }
     }
 
+    private lateinit var routesList: RecyclerView
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -174,6 +176,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         massTransitAdapter = MassTransitAdapter {
 
         }
+
+        routesList = binding.routesList ?: binding.directionLayout.routesList!!
 
         requestLocationPermission()
 
@@ -220,6 +224,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             }
             MARKER_MODE.DIRECTION -> {
                 binding.root.jumpToState(R.id.openedDirectionLayout)
+                binding.root.setTransition(R.id.expandDirectionLayoutTransition)
             }
         }
 
@@ -279,7 +284,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 } else {
                     binding.directionsButton.setImageResource(R.drawable.ic_baseline_arrow_back_24)
                 }
-                if(currentId == R.id.openedDirectionLayout && viewModel.directionBuilded) {
+                if(currentId == R.id.openedDirectionLayout) {
+                    Log.w("asd", "jdhgfjh")
                     binding.root.setTransition(R.id.expandDirectionLayoutTransition)
                 }
             }
@@ -313,8 +319,17 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         binding.directionLayout.directionTypeSpinner.adapter = adapter
 
+        val position = when(viewModel.directionType.value) {
+            DIRECTION_TYPE.MASS_TRANSIT -> 1
+            else -> 0
+        }
+
+        binding.directionLayout.directionTypeSpinner.setSelection(position, false)
+
         binding.directionLayout.directionTypeSpinner.onItemSelectedListener = object: AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+                Log.w("asd", "spinner item selected ${p2}")
+                viewModel.directionShouldBeReload = true
                 viewModel.directionType.value = when(p2) {
                     1 -> DIRECTION_TYPE.MASS_TRANSIT
                     else -> DIRECTION_TYPE.DRIVING
@@ -490,7 +505,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         viewModel.directionType.observe(viewLifecycleOwner) {
             if(viewModel.markerMode.value == MARKER_MODE.DIRECTION) {
-                viewModel.directionShouldBeReload = true
                 buildDirection()
             }
         }
@@ -499,6 +513,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             if(routes == null) return@drivingRoutes
 
             if(!checkDirectionFound(routes)) return@drivingRoutes
+
+            directionHelper.drawDrivingRoutes(routes)
 
             if(viewModel.markerMode.value == MARKER_MODE.DIRECTION) {
                 val boundingBox = BoundingBoxHelper.getBounds(routes.first().geometry)
@@ -518,7 +534,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
             showTotalDirectionData(distance, time)
 
-            binding.directionLayout.routesList.adapter = drivingAdapter
+            routesList.adapter = drivingAdapter
 
             drivingAdapter.submitList(sections)
         }
@@ -527,6 +543,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             if(routes == null) return@massTransitObserver
 
             if(!checkDirectionFound(routes)) return@massTransitObserver
+
+            directionHelper.drawMassTransitRoutes(routes)
 
             if(viewModel.markerMode.value == MARKER_MODE.DIRECTION) {
                 val boundingBox = BoundingBoxHelper.getBounds(routes.first().geometry)
@@ -543,7 +561,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
             showTotalDirectionData(distance, time)
 
-            binding.directionLayout.routesList.adapter = massTransitAdapter
+            routesList.adapter = massTransitAdapter
 
             massTransitAdapter.submitList(routes.first().sections.filter {
                 !(it.metadata.weight.walkingDistance.value.toInt() == 0 && it.metadata.data.transports == null)
@@ -578,7 +596,11 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         val originPoint = viewModel.origin.value
         val destinationPoint = viewModel.destination.value
 
+        Log.e("asd", "viewModel.directionShouldBeReload=${viewModel.directionShouldBeReload}")
+
         if(originPoint != null && destinationPoint != null && viewModel.directionShouldBeReload) {
+            Log.e("asd", "reload direction")
+
             viewModel.directionShouldBeReload = false
 
             binding.directionLayout.progressBar.visibility = View.VISIBLE
@@ -587,27 +609,27 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 DIRECTION_TYPE.DRIVING -> {
                     directionHelper.submitDrivingRequest(originPoint, destinationPoint, {
                         binding.directionLayout.progressBar.visibility = View.GONE
-                        viewModel.directionBuilded = true
+
                         binding.root.setTransition(R.id.expandDirectionLayoutTransition)
 
                         viewModel.massTransitRoutes.value = null
                         viewModel.drivingRoutes.value = it
                     }) {
                         binding.directionLayout.progressBar.visibility = View.GONE
-                        viewModel.directionBuilded = false
+                        showSnackBar(it.toString())
                     }
                 }
                 DIRECTION_TYPE.MASS_TRANSIT -> {
                     directionHelper.submitMassTransitRequest(originPoint, destinationPoint, {
                         binding.directionLayout.progressBar.visibility = View.GONE
-                        viewModel.directionBuilded = true
+
                         binding.root.setTransition(R.id.expandDirectionLayoutTransition)
 
                         viewModel.drivingRoutes.value = null
                         viewModel.massTransitRoutes.value = it
                     }) {
                         binding.directionLayout.progressBar.visibility = View.GONE
-                        viewModel.directionBuilded = false
+                        showSnackBar(it.toString())
                     }
                 }
             }
@@ -625,7 +647,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
         binding.directionLayout.distance.visibility = visibility
         binding.directionLayout.duration.visibility = visibility
-        binding.directionLayout.routesList.visibility = visibility
+        routesList.visibility = visibility
         binding.directionLayout.directionNotFound.visibility = visibilityError
     }
 

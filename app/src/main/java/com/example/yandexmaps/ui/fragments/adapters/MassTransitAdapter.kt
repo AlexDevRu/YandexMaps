@@ -65,7 +65,9 @@ class MassTransitAdapter(private val onClick: (Section) -> Unit)
                 binding.toStopName.text = section.metadata.weight.time.text
             }
 
-            if(!last) {
+            if(last) {
+                binding.root.backgroundTintList = ContextCompat.getColorStateList(itemView.context, R.color.white)
+            } else {
                 binding.root.background = ContextCompat.getDrawable(itemView.context, R.drawable.viewholder_driving_bg)
             }
         }

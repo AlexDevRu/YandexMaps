@@ -57,15 +57,36 @@ class DirectionHelper(private val mapView: MapView) {
         massTransitRouteCollection.clear()
     }*/
 
+    fun drawDrivingRoutes(routes: List<DrivingRoute>) {
+        drivingRouteCollection.clear()
+        massTransitRouteCollection.clear()
+
+        for (route in routes) {
+            drivingRouteCollection.addPolyline(route.geometry)
+        }
+    }
+
+    fun drawMassTransitRoutes(routes: List<Route>) {
+        massTransitRouteCollection.clear()
+        drivingRouteCollection.clear()
+
+        if (routes.isNotEmpty()) {
+            for (section in routes[0].sections) {
+                if (section.stops.size > 0) Log.e("asd", "stop" + section.stops[0].stop.name)
+                drawSection(
+                    section.metadata.data,
+                    SubpolylineHelper.subpolyline(
+                        routes[0].geometry, section.geometry
+                    )
+                )
+            }
+        }
+    }
+
 
     private val drivingRouteListener = object: DrivingSession.DrivingRouteListener {
         override fun onDrivingRoutes(routes: MutableList<DrivingRoute>) {
-            drivingRouteCollection.clear()
-            massTransitRouteCollection.clear()
-
-            for (route in routes) {
-                drivingRouteCollection.addPolyline(route.geometry)
-            }
+            drawDrivingRoutes(routes)
             onDrivingRoutesCallback(routes)
         }
 
@@ -78,8 +99,6 @@ class DirectionHelper(private val mapView: MapView) {
                 }
             )
 
-            Toast.makeText(mapView.context, errorMessage, Toast.LENGTH_SHORT).show()
-
             onDrivingErrorCallback(error)
         }
     }
@@ -87,21 +106,7 @@ class DirectionHelper(private val mapView: MapView) {
     private val mtRouteListener = object: Session.RouteListener {
         override fun onMasstransitRoutes(routes: MutableList<Route>) {
             // In this example we consider first alternative only
-            massTransitRouteCollection.clear()
-            drivingRouteCollection.clear()
-
-            if (routes.size > 0) {
-                for (section in routes[0].sections) {
-                    if (section.stops.size > 0) Log.e("asd", "stop" + section.stops[0].stop.name)
-                    drawSection(
-                        section.metadata.data,
-                        SubpolylineHelper.subpolyline(
-                            routes[0].geometry, section.geometry
-                        )
-                    )
-                }
-            }
-
+            drawMassTransitRoutes(routes)
             onMassRoutesCallback(routes)
         }
 
