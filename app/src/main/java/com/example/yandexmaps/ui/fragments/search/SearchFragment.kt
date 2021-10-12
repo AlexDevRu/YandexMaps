@@ -41,9 +41,7 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
 
 
     private val SEARCH_OPTIONS = SuggestOptions().setSuggestTypes(
-        SuggestType.GEO.value or
-                SuggestType.BIZ.value or
-                SuggestType.TRANSIT.value
+        SuggestType.BIZ.value
     )
 
 
@@ -72,7 +70,11 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
         suggestSession = searchManager.createSuggestSession()
 
         suggestionsAdapter = SuggestionsAdapter {
-            searchByQuery(it)
+            Log.w(TAG, "suggestion uri ${it.uri}")
+            if(it.uri != null)
+                searchByUri(it.uri!!, it.displayText.orEmpty())
+            else
+                showSearchLayer(it.displayText.orEmpty())
         }
         binding.suggestResult.adapter = suggestionsAdapter
 
@@ -110,14 +112,14 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
             override fun onResponse(suggests: MutableList<SuggestItem>) {
                 Log.w(TAG,"suggests ${suggests}")
 
-                suggests[0].properties.forEach {
+                /*suggests[0].properties.forEach {
                     Log.d(TAG, "key ${it.key}, value ${it.value}")
                 }
                 suggests[0].tags.forEach {
                     Log.d(TAG, "tag ${it}")
-                }
+                }*/
 
-                viewModel.suggestionsList.value = suggests.map { it.displayText }
+                viewModel.suggestionsList.value = suggests
             }
 
             override fun onError(error: Error) {
@@ -132,23 +134,22 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
         })
     }
 
-    private fun searchByQuery(query: String) {
-        searchSession = searchManager.submit(
-            query,
-            Geometry.fromBoundingBox(viewModel.boundingBox),
-            SearchOptions(),
+    private fun searchByUri(uri: String, searchText: String) {
+        searchSession = searchManager.searchByURI(
+            uri,
+            SearchOptions().setGeometry(true),
             object: Session.SearchListener {
                 override fun onSearchResponse(response: Response) {
                     val obj = response.collection.children.first().obj
                     val metadata = obj?.metadataContainer?.getItem(BusinessObjectMetadata::class.java)
+
                     Log.e(TAG, "address ${metadata?.address?.formattedAddress}")
                     Log.e(TAG, "working hours ${metadata?.workingHours?.availabilities?.firstOrNull()?.days} ${metadata?.workingHours?.availabilities?.firstOrNull()?.timeRanges?.firstOrNull()?.from}")
 
-                    viewModel.searchResponse.value = SearchResponseModel(response, 1)
+                    viewModel.searchLayerQuery.value = null
+                    viewModel.searchResponse.value = SearchResponseModel(response, searchText, false,1)
 
-                    binding.suggestQuery.hideKeyBoard()
-
-                    findNavController().navigateUp()
+                    goBack()
                 }
 
                 override fun onSearchError(error: Error) {
@@ -156,5 +157,16 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
                 }
             }
         )
+    }
+
+    private fun showSearchLayer(query: String) {
+        viewModel.searchResponse.value = null
+        viewModel.searchLayerQuery.value = query
+        goBack()
+    }
+
+    private fun goBack() {
+        binding.suggestQuery.hideKeyBoard()
+        findNavController().navigateUp()
     }
 }

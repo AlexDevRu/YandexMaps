@@ -23,6 +23,7 @@ import com.example.yandexmaps.ui.helpers.DirectionHelper
 import com.example.yandexmaps.ui.helpers.PanoramaHelper
 import com.example.yandexmaps.ui.helpers.TrafficHelper
 import com.example.yandexmaps.ui.helpers.UserLocationHelper
+import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.example.yandexmaps.utils.Utils
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
@@ -55,9 +56,11 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
     private val viewModel by sharedViewModel<MapsVM>()
 
-    private val cameraListener = CameraListener { _, cameraPosition, _, _ ->
+    private val cameraListener = CameraListener { _, cameraPosition, _, finished ->
         userLocationHelper.resetAnchor()
         viewModel.cameraPosition = cameraPosition
+        if(viewModel.searchLayerQuery.value != null && finished)
+            submitQuery(viewModel.searchLayerQuery.value!!)
     }
 
     private val inputListener = object: InputListener {
@@ -180,10 +183,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         routesList = binding.routesList ?: binding.directionLayout.routesList!!
 
         requestLocationPermission()
-
-        if(viewModel.cameraPosition != null) {
-            binding.mapview.map.move(viewModel.cameraPosition!!)
-        }
     }
 
 
@@ -206,6 +205,8 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         binding.mapview.map.addInputListener(inputListener)
 
         binding.mapview.map.addCameraListener(cameraListener)
+
+
 
         binding.myLocationButton.setOnClickListener {
 
@@ -306,6 +307,10 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             binding.mapview.map.selectGeoObject(selectionMetadata.id, selectionMetadata.layerId)
         }
 
+        if(viewModel.cameraPosition != null) {
+            binding.mapview.map.move(viewModel.cameraPosition!!)
+        }
+
         observe()
     }
 
@@ -378,14 +383,14 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
             val response = it.response
 
-            binding.searchQuery.text = response.metadata.requestText
+            binding.searchQuery.text = it.searchText
 
             var i = 0
 
             for (searchResult in response.collection.children) {
                 val resultLocation = searchResult.obj?.geometry?.get(0)?.point
                 if (resultLocation != null) {
-                    if(i++ >= it.showResults) break
+                    if(i++ >= it.showResults && !it.searchLayer) break
                     if(viewModel.markerMode.value == MARKER_MODE.PLACE) {
                         searchCollection.addPlacemark(
                             resultLocation,
@@ -408,10 +413,13 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
             Log.d(TAG, "response observer")
 
-            response.collection.children.firstOrNull()?.let {
-                val point = it.obj?.geometry?.get(0)?.point
-                if(point != null)
-                    binding.mapview.mapWindow.map.move(CameraPosition(point, 11f, 0f, 0f))
+            if(!it.searchLayer) {
+                response.collection.children.firstOrNull()?.let {
+                    val point = it.obj?.geometry?.get(0)?.point
+                    if(point != null) {
+                        binding.mapview.mapWindow.map.move(CameraPosition(point, binding.mapview.map.cameraPosition.zoom, 0f, 0f))
+                    }
+                }
             }
         }
 
@@ -422,12 +430,13 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                     if(point != null) {
                         panoramaHelper.findNearest(point, panoramaListener)
 
-                        //val metadata = it.metadataContainer.getItem(BusinessObjectMetadata::class.java)
-
-                        searchByPoint(it.geometry.first().point!!, {
+                        searchByPoint(point, {
                             Log.d(TAG, "collection ${it.collection.children.first().obj}")
                             val obj = it.collection.children.first().obj
                             val metadata = obj?.metadataContainer?.getItem(BusinessObjectMetadata::class.java)
+                            val panoramas = obj?.metadataContainer?.getItem(PanoramasObjectMetadata::class.java)
+                            Log.d(TAG, "metadata ${metadata}")
+                            Log.d(TAG, "panoramas ${panoramas}")
                             Log.d(TAG, "selected address ${metadata?.address?.formattedAddress}")
                             Log.d(TAG, "selected working hours ${metadata?.workingHours?.availabilities?.firstOrNull()?.days} ${metadata?.workingHours?.availabilities?.firstOrNull()?.timeRanges?.firstOrNull()?.from}")
                         }, {
@@ -567,6 +576,10 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                 !(it.metadata.weight.walkingDistance.value.toInt() == 0 && it.metadata.data.transports == null)
             })
         }
+
+        viewModel.searchLayerQuery.observe(viewLifecycleOwner) {
+            if(it != null) submitQuery(it)
+        }
     }
 
     private fun searchByPoint(point: Point, onResponse: (Response) -> Unit, onFailure: (Error) -> Unit) {
@@ -574,8 +587,28 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         searchSession = searchManager.submit(
             point,
             binding.mapview.map.cameraPosition.zoom.toInt(),
-            SearchOptions().setSearchTypes(SearchType.GEO.value),
+            SearchOptions().setSnippets(
+                Snippet.PANORAMAS.value or
+                        Snippet.BUSINESS_IMAGES.value
+            ),
             searchPointListener
+        )
+    }
+
+    private fun submitQuery(query: String) {
+        searchSession = searchManager.submit(
+            query,
+            VisibleRegionUtils.toPolygon(binding.mapview.map.visibleRegion),
+            SearchOptions(),
+            object: Session.SearchListener {
+                override fun onSearchResponse(response: Response) {
+                    viewModel.searchResponse.value = SearchResponseModel(response, query, true)
+                }
+
+                override fun onSearchError(error: Error) {
+                    showSnackBar(error.toString())
+                }
+            }
         )
     }
 

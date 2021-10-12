@@ -13,6 +13,7 @@ import com.yandex.mapkit.location.Location
 import com.yandex.mapkit.location.LocationListener
 import com.yandex.mapkit.location.LocationStatus
 import com.yandex.mapkit.map.CameraPosition
+import com.yandex.mapkit.search.SuggestItem
 import com.yandex.mapkit.transport.masstransit.Route
 
 class MapsVM: ViewModel() {
@@ -28,9 +29,10 @@ class MapsVM: ViewModel() {
 
     val selectedGeoObject = MutableLiveData<GeoObject?>(null)
 
-    val suggestionsList = MutableLiveData<List<String?>>()
+    val suggestionsList = MutableLiveData<List<SuggestItem?>>()
 
     val searchResponse = MutableLiveData<SearchResponseModel?>(null)
+    val searchLayerQuery = MutableLiveData<String?>(null)
 
     private val BOX_SIZE = 0.2
 
@@ -52,9 +54,6 @@ class MapsVM: ViewModel() {
 
     val drivingRoutes = MutableLiveData<List<DrivingRoute>?>()
     val massTransitRoutes = MutableLiveData<List<Route>?>()
-
-    val directionBuilded
-        get() = !drivingRoutes.value.isNullOrEmpty() && !massTransitRoutes.value.isNullOrEmpty()
 
     var userAdded = false
 

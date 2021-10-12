@@ -6,13 +6,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.yandexmaps.databinding.ViewholderSuggestionBinding
+import com.yandex.mapkit.search.SuggestItem
 
-class SuggestionsAdapter(private val clickHandler: (String) -> Unit)
-    : ListAdapter<String, SuggestionsAdapter.SuggestionViewHolder>(SuggestionDiffUtil()){
+class SuggestionsAdapter(private val clickHandler: (SuggestItem) -> Unit)
+    : ListAdapter<SuggestItem, SuggestionsAdapter.SuggestionViewHolder>(SuggestionDiffUtil()){
 
     inner class SuggestionViewHolder(private val binding: ViewholderSuggestionBinding): RecyclerView.ViewHolder(binding.root) {
-        fun bind(suggestion: String) {
-            binding.suggestionTextView.text = suggestion
+        fun bind(suggestion: SuggestItem) {
+            binding.suggestionTextView.text = suggestion.displayText
             binding.root.setOnClickListener {
                 clickHandler(suggestion)
             }
@@ -20,12 +21,12 @@ class SuggestionsAdapter(private val clickHandler: (String) -> Unit)
     }
 
     companion object {
-        class SuggestionDiffUtil : DiffUtil.ItemCallback<String>() {
-            override fun areItemsTheSame(oldItem: String, newItem: String): Boolean {
+        class SuggestionDiffUtil : DiffUtil.ItemCallback<SuggestItem>() {
+            override fun areItemsTheSame(oldItem: SuggestItem, newItem: SuggestItem): Boolean {
                 return false
             }
 
-            override fun areContentsTheSame(oldItem: String, newItem: String): Boolean {
+            override fun areContentsTheSame(oldItem: SuggestItem, newItem: SuggestItem): Boolean {
                 return false
             }
         }
