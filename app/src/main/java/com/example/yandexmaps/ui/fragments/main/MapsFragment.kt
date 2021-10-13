@@ -56,11 +56,24 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
 
     private val viewModel by sharedViewModel<MapsVM>()
 
+    private val visibleRegion
+        get() = VisibleRegionUtils.toPolygon(binding.mapview.map.visibleRegion)
+
+    private val searchLayerListener = object: Session.SearchListener {
+        override fun onSearchResponse(response: Response) {
+            viewModel.searchResponse.value = SearchResponseModel(response, viewModel.searchLayerQuery.value!!, true)
+        }
+
+        override fun onSearchError(error: Error) {
+            showSnackBar(error.toString())
+        }
+    }
+
     private val cameraListener = CameraListener { _, cameraPosition, _, finished ->
         userLocationHelper.resetAnchor()
         viewModel.cameraPosition = cameraPosition
         if(viewModel.searchLayerQuery.value != null && finished)
-            submitQuery(viewModel.searchLayerQuery.value!!)
+            viewModel.submitQuery(viewModel.searchLayerQuery.value!!, visibleRegion, searchLayerListener)
     }
 
     private val inputListener = object: InputListener {
@@ -132,10 +145,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
     private lateinit var userLocationHelper: UserLocationHelper
 
 
-    private val searchManager = SearchFactory.getInstance().createSearchManager(
-        SearchManagerType.COMBINED)
 
-    private lateinit var searchSession: Session
 
     private val locationManager = MapKitFactory.getInstance().createLocationManager()
 
@@ -205,8 +215,6 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         binding.mapview.map.addInputListener(inputListener)
 
         binding.mapview.map.addCameraListener(cameraListener)
-
-
 
         binding.myLocationButton.setOnClickListener {
 
@@ -430,7 +438,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
                     if(point != null) {
                         panoramaHelper.findNearest(point, panoramaListener)
 
-                        searchByPoint(point, {
+                        viewModel.searchByPoint(point, {
                             Log.d(TAG, "collection ${it.collection.children.first().obj}")
                             val obj = it.collection.children.first().obj
                             val metadata = obj?.metadataContainer?.getItem(BusinessObjectMetadata::class.java)
@@ -464,7 +472,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             if(it != null) {
                 Log.w(TAG, "origin set $it")
                 originCollection.addPlacemark(it, ImageProvider.fromResource(requireContext(), R.drawable.origin))
-                searchByPoint(it, { response ->
+                viewModel.searchByPoint(it, { response ->
                     viewModel.originAddress.value = response.collection.children.firstOrNull()?.obj?.name
                 }, {
                     viewModel.originAddress.value = null
@@ -480,7 +488,7 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
             if(it != null) {
                 Log.w(TAG, "destination set $it")
                 destinationCollection.addPlacemark(it, ImageProvider.fromResource(requireContext(), R.drawable.destination))
-                searchByPoint(it, { response ->
+                viewModel.searchByPoint(it, { response ->
                     viewModel.destinationAddress.value = response.collection.children.firstOrNull()?.obj?.name
                 }, {
                     viewModel.destinationAddress.value = null
@@ -578,52 +586,9 @@ class MapsFragment: BaseFragment<FragmentMapsBinding>(FragmentMapsBinding::infla
         }
 
         viewModel.searchLayerQuery.observe(viewLifecycleOwner) {
-            if(it != null) submitQuery(it)
+            if(it != null) viewModel.submitQuery(it, visibleRegion, searchLayerListener)
         }
     }
-
-    private fun searchByPoint(point: Point, onResponse: (Response) -> Unit, onFailure: (Error) -> Unit) {
-        searchPointListener = MySearchPointListener(onResponse, onFailure)
-        searchSession = searchManager.submit(
-            point,
-            binding.mapview.map.cameraPosition.zoom.toInt(),
-            SearchOptions().setSnippets(
-                Snippet.PANORAMAS.value or
-                        Snippet.BUSINESS_IMAGES.value
-            ),
-            searchPointListener
-        )
-    }
-
-    private fun submitQuery(query: String) {
-        searchSession = searchManager.submit(
-            query,
-            VisibleRegionUtils.toPolygon(binding.mapview.map.visibleRegion),
-            SearchOptions(),
-            object: Session.SearchListener {
-                override fun onSearchResponse(response: Response) {
-                    viewModel.searchResponse.value = SearchResponseModel(response, query, true)
-                }
-
-                override fun onSearchError(error: Error) {
-                    showSnackBar(error.toString())
-                }
-            }
-        )
-    }
-
-    inner class MySearchPointListener(private val onResponse: (Response) -> Unit, private val onFailure: (Error) -> Unit): Session.SearchListener {
-        override fun onSearchResponse(response: Response) {
-            onResponse(response)
-        }
-
-        override fun onSearchError(error: Error) {
-            showSnackBar(error.toString())
-            onFailure(error)
-        }
-    }
-
-    private lateinit var searchPointListener: MySearchPointListener
 
     private fun buildDirection() {
         val originPoint = viewModel.origin.value

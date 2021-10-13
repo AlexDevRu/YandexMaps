@@ -8,13 +8,16 @@ import com.example.yandexmaps.utils.SingleLiveEvent
 import com.yandex.mapkit.GeoObject
 import com.yandex.mapkit.directions.driving.DrivingRoute
 import com.yandex.mapkit.geometry.BoundingBox
+import com.yandex.mapkit.geometry.Geometry
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.location.Location
 import com.yandex.mapkit.location.LocationListener
 import com.yandex.mapkit.location.LocationStatus
 import com.yandex.mapkit.map.CameraPosition
-import com.yandex.mapkit.search.SuggestItem
+import com.yandex.mapkit.map.VisibleRegionUtils
+import com.yandex.mapkit.search.*
 import com.yandex.mapkit.transport.masstransit.Route
+import com.yandex.runtime.Error
 
 class MapsVM: ViewModel() {
 
@@ -22,17 +25,13 @@ class MapsVM: ViewModel() {
         private const val TAG = "MapsVM"
     }
 
-    val query = MutableLiveData<String>()
-
     var userLocation = Point()
     private var lastKnownUserLocation: Point? = null
 
     val selectedGeoObject = MutableLiveData<GeoObject?>(null)
 
-    val suggestionsList = MutableLiveData<List<SuggestItem?>>()
-
     val searchResponse = MutableLiveData<SearchResponseModel?>(null)
-    val searchLayerQuery = MutableLiveData<String?>(null)
+    val searchLayerQuery = SingleLiveEvent<String?>(null)
 
     private val BOX_SIZE = 0.2
 
@@ -114,6 +113,51 @@ class MapsVM: ViewModel() {
     }
 
     var directionType = MutableLiveData(DIRECTION_TYPE.DRIVING)
+
+
+
+    private val searchManager = SearchFactory.getInstance().createSearchManager(
+        SearchManagerType.COMBINED)
+
+    private lateinit var searchSession: Session
+
+
+    private fun getSearchListener(onResponse: (Response) -> Unit, onFailure: (Error) -> Unit) = object: Session.SearchListener {
+        override fun onSearchResponse(response: Response) {
+            onResponse(response)
+        }
+
+        override fun onSearchError(error: Error) {
+            onFailure(error)
+        }
+    }
+
+    private lateinit var searchByPointListener: Session.SearchListener
+    private lateinit var searchByQueryListener: Session.SearchListener
+
+
+    fun searchByPoint(point: Point, onResponse: (Response) -> Unit, onFailure: (Error) -> Unit) {
+        searchByPointListener = getSearchListener(onResponse, onFailure)
+        searchSession = searchManager.submit(
+            point,
+            cameraPosition?.zoom?.toInt(),
+            SearchOptions().setSnippets(
+                Snippet.PANORAMAS.value or
+                        Snippet.BUSINESS_IMAGES.value
+            ),
+            searchByPointListener
+        )
+    }
+
+    fun submitQuery(query: String, geometry: Geometry, listener: Session.SearchListener) {
+        searchByQueryListener = listener
+        searchSession = searchManager.submit(
+            query,
+            geometry,
+            SearchOptions(),
+            searchByQueryListener
+        )
+    }
 }
 
 enum class MARKER_MODE {

@@ -23,6 +23,7 @@ import com.yandex.runtime.Error
 import com.yandex.runtime.network.NetworkError
 import com.yandex.runtime.network.RemoteError
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding::inflate) {
@@ -32,7 +33,8 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
         private const val RESULT_NUMBER_LIMIT = 5
     }
 
-    private val viewModel by sharedViewModel<MapsVM>()
+    private val mapsViewModel by sharedViewModel<MapsVM>()
+    private val viewModel by viewModel<SearchVM>()
 
     private lateinit var suggestionsAdapter: SuggestionsAdapter
 
@@ -108,7 +110,7 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
     }
 
     private fun requestSuggest(query: String) {
-        suggestSession.suggest(query, viewModel.boundingBox, SEARCH_OPTIONS, object: SuggestSession.SuggestListener {
+        suggestSession.suggest(query, mapsViewModel.boundingBox, SEARCH_OPTIONS, object: SuggestSession.SuggestListener {
             override fun onResponse(suggests: MutableList<SuggestItem>) {
                 Log.w(TAG,"suggests ${suggests}")
 
@@ -146,8 +148,8 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
                     Log.e(TAG, "address ${metadata?.address?.formattedAddress}")
                     Log.e(TAG, "working hours ${metadata?.workingHours?.availabilities?.firstOrNull()?.days} ${metadata?.workingHours?.availabilities?.firstOrNull()?.timeRanges?.firstOrNull()?.from}")
 
-                    viewModel.searchLayerQuery.value = null
-                    viewModel.searchResponse.value = SearchResponseModel(response, searchText, false,1)
+                    mapsViewModel.searchLayerQuery.value = null
+                    mapsViewModel.searchResponse.value = SearchResponseModel(response, searchText, false,1)
 
                     goBack()
                 }
@@ -160,8 +162,8 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
     }
 
     private fun showSearchLayer(query: String) {
-        viewModel.searchResponse.value = null
-        viewModel.searchLayerQuery.value = query
+        mapsViewModel.searchResponse.value = null
+        mapsViewModel.searchLayerQuery.value = query
         goBack()
     }
 
