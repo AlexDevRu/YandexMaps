@@ -89,6 +89,15 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+    <include
+        android:id="@+id/placeLayout"
+        layout="@layout/layout_place"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="0dp"
+
+        app:layout_constraintEnd_toStartOf="parent" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/routesList"
         android:layout_width="wrap_content"

@@ -88,6 +88,14 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+    <include
+        android:id="@+id/placeLayout"
+        layout="@layout/layout_place"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="-40dp"
+        app:layout_constraintTop_toBottomOf="parent" />
+
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/searchButton"
@@ -110,8 +118,8 @@
         android:clickable="true"
         android:focusable="true"
         app:backgroundTint="@color/white"
-        app:layout_constraintBottom_toTopOf="@+id/searchButton"
-        app:layout_constraintEnd_toEndOf="@+id/searchButton"
+        app:layout_constraintBottom_toTopOf="@+id/directionsButton"
+        app:layout_constraintEnd_toEndOf="@+id/directionsButton"
         app:srcCompat="@drawable/ic_baseline_gps_fixed_24" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -122,8 +130,8 @@
         android:clickable="true"
         android:focusable="true"
         app:backgroundTint="@color/white"
-        app:layout_constraintBottom_toTopOf="@+id/myLocationButton"
-        app:layout_constraintEnd_toEndOf="@+id/myLocationButton"
+        app:layout_constraintBottom_toTopOf="@+id/searchButton"
+        app:layout_constraintEnd_toEndOf="@+id/searchButton"
         app:srcCompat="@drawable/ic_baseline_directions_24" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -134,8 +142,8 @@
         android:clickable="true"
         android:focusable="true"
         app:backgroundTint="@color/white"
-        app:layout_constraintBottom_toTopOf="@+id/directionsButton"
-        app:layout_constraintEnd_toEndOf="@+id/directionsButton"
+        app:layout_constraintEnd_toEndOf="@id/myLocationButton"
+        app:layout_constraintBottom_toTopOf="@id/myLocationButton"
         app:srcCompat="@drawable/ic_baseline_panorama_24" />
 
 </com.example.yandexmaps.ui.custom.SavingMotionLayout>

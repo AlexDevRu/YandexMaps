@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:padding="@dimen/medium_indent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/placeName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/medium_indent"
+            android:textSize="@dimen/medium_textsize"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/barrier"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Name" />
+
+        <TextView
+            android:id="@+id/placeAddress"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="@dimen/medium_indent"
+            android:textSize="@dimen/base_textsize"
+            app:layout_constraintEnd_toStartOf="@id/barrier"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/placeName"
+            tools:text="Address" />
+
+        <TextView
+            android:id="@+id/phoneNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/base_indent"
+            android:textSize="@dimen/base_textsize"
+            android:textStyle="italic"
+            tools:text="Phone"
+            app:layout_constraintTop_toBottomOf="@id/placeAddress"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <TextView
+            android:id="@+id/placeWebsite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/base_indent"
+            android:textSize="@dimen/base_textsize"
+            tools:text="website"
+            android:autoLink="web"
+            android:textColorLink="@color/blue"
+            android:linksClickable="true"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:singleLine="true"
+            app:layout_constraintTop_toBottomOf="@id/phoneNumber"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+
+
+
+        <ImageButton
+            android:id="@+id/markdownButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:visibility="gone"
+            android:padding="@dimen/base_indent"
+            android:src="@drawable/ic_baseline_bookmark_24"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+        <ProgressBar
+            android:id="@+id/markdownProgressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/barrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="left"
+            app:constraint_referenced_ids="markdownButton,markdownProgressBar" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.core.widget.NestedScrollView>

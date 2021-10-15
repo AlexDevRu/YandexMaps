@@ -15,7 +15,9 @@ import com.example.yandexmaps.databinding.FragmentSearchBinding
 import com.example.yandexmaps.ui.fragments.adapters.SuggestionsAdapter
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
 import com.example.yandexmaps.ui.fragments.main.MapsVM
+import com.example.yandexmaps.ui.fragments.main.Result
 import com.example.yandexmaps.ui.models.SearchResponseModel
+import com.example.yandexmaps.utils.Utils
 import com.example.yandexmaps.utils.hideKeyBoard
 import com.yandex.mapkit.geometry.Geometry
 import com.yandex.mapkit.search.*
@@ -74,7 +76,21 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
         suggestionsAdapter = SuggestionsAdapter {
             Log.w(TAG, "suggestion uri ${it.uri}")
             if(it.uri != null)
-                searchByUri(it.uri!!, it.displayText.orEmpty())
+                mapsViewModel.searchVM.searchByUri(it.uri!!, { metadata ->
+
+                    /*mapsViewModel.searchVM.searchResponse.value =
+                        SearchResponseModel(metadata.response, it.displayText.orEmpty(), false,1)*/
+                    /*val obj = response.collection.children.first().obj
+
+                    mapsViewModel.searchLayerQuery.value = null
+                    mapsViewModel.searchResponse.value = SearchResponseModel(response, it.displayText.orEmpty(), false,1)*/
+
+                    goBack()
+                }, {
+
+                }, {
+                    showSnackBar(it.toString())
+                })
             else
                 showSearchLayer(it.displayText.orEmpty())
         }
@@ -110,7 +126,9 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
     }
 
     private fun requestSuggest(query: String) {
-        suggestSession.suggest(query, mapsViewModel.boundingBox, SEARCH_OPTIONS, object: SuggestSession.SuggestListener {
+        val boundingBox = mapsViewModel.userLocationVM.boundingBox ?: return
+
+        suggestSession.suggest(query, boundingBox, SEARCH_OPTIONS, object: SuggestSession.SuggestListener {
             override fun onResponse(suggests: MutableList<SuggestItem>) {
                 Log.w(TAG,"suggests ${suggests}")
 
@@ -125,45 +143,17 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
             }
 
             override fun onError(error: Error) {
-                val errorMessage = getString(when(error) {
-                    is RemoteError -> R.string.remote_error_message
-                    is NetworkError -> R.string.network_error_message
-                    else -> R.string.unknown_error_message
-                })
-
+                val errorMessage = Utils.getErrorMessage(error)
                 Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
             }
         })
     }
 
-    private fun searchByUri(uri: String, searchText: String) {
-        searchSession = searchManager.searchByURI(
-            uri,
-            SearchOptions().setGeometry(true),
-            object: Session.SearchListener {
-                override fun onSearchResponse(response: Response) {
-                    val obj = response.collection.children.first().obj
-                    val metadata = obj?.metadataContainer?.getItem(BusinessObjectMetadata::class.java)
 
-                    Log.e(TAG, "address ${metadata?.address?.formattedAddress}")
-                    Log.e(TAG, "working hours ${metadata?.workingHours?.availabilities?.firstOrNull()?.days} ${metadata?.workingHours?.availabilities?.firstOrNull()?.timeRanges?.firstOrNull()?.from}")
-
-                    mapsViewModel.searchLayerQuery.value = null
-                    mapsViewModel.searchResponse.value = SearchResponseModel(response, searchText, false,1)
-
-                    goBack()
-                }
-
-                override fun onSearchError(error: Error) {
-                    showSnackBar(error.toString())
-                }
-            }
-        )
-    }
 
     private fun showSearchLayer(query: String) {
-        mapsViewModel.searchResponse.value = null
-        mapsViewModel.searchLayerQuery.value = query
+       /* mapsViewModel.searchResponse.value = null
+        mapsViewModel.searchLayerQuery.value = query*/
         goBack()
     }
 

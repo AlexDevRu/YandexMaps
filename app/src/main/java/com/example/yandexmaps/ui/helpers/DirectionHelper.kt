@@ -49,26 +49,25 @@ class DirectionHelper(private val mapView: MapView) {
         massTransitRouteCollection.isVisible = isVisible
     }
 
-    /*fun deleteDrivingRoutes() {
+    fun clearRoutes() {
         drivingRouteCollection.clear()
+        massTransitRouteCollection.clear()
     }
 
-    fun deleteMassTransitRoutes() {
-        massTransitRouteCollection.clear()
-    }*/
-
     fun drawDrivingRoutes(routes: List<DrivingRoute>) {
-        drivingRouteCollection.clear()
-        massTransitRouteCollection.clear()
+        clearRoutes()
 
         for (route in routes) {
             drivingRouteCollection.addPolyline(route.geometry)
         }
     }
+    fun drawDrivingRoutes(route: DrivingRoute) {
+        clearRoutes()
+        drivingRouteCollection.addPolyline(route.geometry)
+    }
 
     fun drawMassTransitRoutes(routes: List<Route>) {
-        massTransitRouteCollection.clear()
-        drivingRouteCollection.clear()
+        clearRoutes()
 
         if (routes.isNotEmpty()) {
             for (section in routes[0].sections) {
@@ -80,6 +79,19 @@ class DirectionHelper(private val mapView: MapView) {
                     )
                 )
             }
+        }
+    }
+    fun drawMassTransitRoutes(route: Route) {
+        clearRoutes()
+
+        for (section in route.sections) {
+            if (section.stops.size > 0) Log.e("asd", "stop" + section.stops[0].stop.name)
+            drawSection(
+                section.metadata.data,
+                SubpolylineHelper.subpolyline(
+                    route.geometry, section.geometry
+                )
+            )
         }
     }
 

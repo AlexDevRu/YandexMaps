@@ -5,8 +5,9 @@ import android.content.Context.INPUT_METHOD_SERVICE
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import com.example.yandexmaps.R
-
-
+import com.yandex.runtime.Error
+import com.yandex.runtime.network.NetworkError
+import com.yandex.runtime.network.RemoteError
 
 
 object Utils {
@@ -33,6 +34,13 @@ object Utils {
         val secondsUnit = context.getString(R.string.seconds)
 
         return f(h, hoursUnit) + f(m, minutesUnit) + f(s, secondsUnit)
+    }
+
+
+    fun getErrorMessage(error: Error) = when(error) {
+        is RemoteError -> R.string.remote_error_message
+        is NetworkError -> R.string.network_error_message
+        else -> R.string.unknown_error_message
     }
 }
 
