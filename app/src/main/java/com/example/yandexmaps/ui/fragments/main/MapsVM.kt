@@ -4,13 +4,14 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.yandexmaps.ui.models.GeoObjectMetadataModel
 import com.example.yandexmaps.ui.models.SearchResponseModel
 import com.example.yandexmaps.utils.SingleLiveEvent
 import com.example.yandexmaps.utils.extensions.DirectionVM
-import com.example.yandexmaps.utils.extensions.SearchVM
-import com.example.yandexmaps.utils.extensions.UserLocationVM
+import com.example.yandexmaps.utils.extensions.distance
 import com.example.yandexmaps.utils.extensions.uri
 import com.yandex.mapkit.GeoObject
+import com.yandex.mapkit.geometry.Geometry
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.search.*
@@ -31,22 +32,23 @@ class MapsVM(): ViewModel() {
 
     companion object {
         private const val TAG = "MapsVM"
+        private const val minDistanceForUpdateDirection = 2.0
     }
 
     private val _cameraPosition = MutableLiveData<CameraPosition?>(null)
     val cameraPosition: LiveData<CameraPosition?> = _cameraPosition
 
-    private val _origin = MutableStateFlow<Point?>(null)
-    val origin: StateFlow<Point?> = _origin
+    private val _origin = MutableLiveData<Point?>(null)
+    val origin: LiveData<Point?> = _origin
 
     private val _destination = MutableLiveData<Point?>(null)
     val destination: LiveData<Point?> = _destination
 
     private val _originAddress = MutableLiveData<Result<String?>>(null)
-    var originAddress: LiveData<Result<String?>> = _originAddress
+    val originAddress: LiveData<Result<String?>> = _originAddress
 
     private val _destinationAddress = MutableLiveData<Result<String?>>(null)
-    var destinationAddress: LiveData<Result<String?>> = _destinationAddress
+    val destinationAddress: LiveData<Result<String?>> = _destinationAddress
 
     val directionAction = SingleLiveEvent(DIRECTION_ACTION.BIND_MY_LOCATION)
 
@@ -66,12 +68,14 @@ class MapsVM(): ViewModel() {
     private val _directionType = MutableLiveData(DIRECTION_TYPE.DRIVING)
     val directionType: LiveData<DIRECTION_TYPE> = _directionType
 
-
+    private val _searchResponse = MutableLiveData<Result<SearchResponseModel?>>()
+    val searchResponse: LiveData<Result<SearchResponseModel?>> = _searchResponse
 
 
     val directionVM = DirectionVM()
     val userLocationVM = UserLocationVM(::syncDirectionPoint)
     val searchVM = SearchVM()
+
 
     fun setMarker(geoObject: GeoObject) {
         when(markerMode.value) {
@@ -104,6 +108,7 @@ class MapsVM(): ViewModel() {
         when(markerMode.value) {
             MARKER_MODE.PLACE -> {
                 _selectedGeoObject.value = null
+                _selectedGeoObjectMetadata.value = null
             }
             MARKER_MODE.DIRECTION -> {
                 when(directionMarkerType.value) {
@@ -147,13 +152,24 @@ class MapsVM(): ViewModel() {
         directionAction.value = action
     }
 
+    private fun isDirectionShouldBeUpdated(point: Point?): Boolean {
+        val distance = if(point != null && userLocationVM.userLocation.value != null)
+            point.distance(userLocationVM.userLocation.value!!)
+        else 0.0
+
+        return distance >= minDistanceForUpdateDirection
+    }
+
     private fun syncDirectionPoint() {
-        Log.w(TAG, "dfjgkjfgljdfgjdflgj ${DIRECTION_MARKER_TYPE.ORIGIN.binded}")
         if(directionAction.value == DIRECTION_ACTION.BIND_MY_LOCATION) {
             if(DIRECTION_MARKER_TYPE.ORIGIN.binded) {
-                setOrigin(userLocationVM.userLocation.value)
+                if(isDirectionShouldBeUpdated(origin.value)) {
+                    setOrigin(userLocationVM.userLocation.value)
+                }
             } else if(DIRECTION_MARKER_TYPE.DESTINATION.binded) {
-                setDestination(userLocationVM.userLocation.value)
+                if(isDirectionShouldBeUpdated(destination.value)) {
+                    setDestination(userLocationVM.userLocation.value)
+                }
             }
         }
     }
@@ -162,6 +178,7 @@ class MapsVM(): ViewModel() {
         _origin.value = point
         val zoom = cameraPosition.value?.zoom?.toInt() ?: 11
         searchVM.searchByPoint(point, zoom, {
+            //val toponym = it.collection.metadataContainer.getItem(ToponymObjectMetadata::class.java)
             _originAddress.value = Result.Success(it.collection.children.firstOrNull()?.obj?.name)
         }, {
             _originAddress.value = Result.Loading()
@@ -197,14 +214,6 @@ class MapsVM(): ViewModel() {
         _markerMode.value = markerMode.value?.toggle()
     }
 
-
-    private fun getAddressBySearchResponse(resultResponse: Result<Response>) = when (resultResponse) {
-        is Result.Success -> Result.Success(resultResponse.value.metadata.toponym?.name)
-        is Result.Failure -> Result.Failure(resultResponse.throwable)
-        is Result.Loading -> Result.Loading()
-    }
-
-
     private fun buildDirection() {
         val originPoint = origin.value
         val destinationPoint = destination.value
@@ -222,177 +231,70 @@ class MapsVM(): ViewModel() {
             }
         }
     }
-}
 
-
-/*class MapsVM: ViewModel() {
-
-    companion object {
-        private const val TAG = "MapsVM"
+    fun clearSearch() {
+        _searchResponse.value = Result.Success(null)
     }
 
-    var userLocation = Point()
-    private var lastKnownUserLocation: Point? = null
+    private lateinit var visibleRegion: Geometry
 
-    val selectedGeoObject = MutableLiveData<GeoObject?>(null)
+    fun updateVisibleRegion(geometry: Geometry) {
+        visibleRegion = geometry
+    }
 
-    val searchResponse = MutableLiveData<SearchResponseModel?>(null)
-    val searchLayerQuery = SingleLiveEvent<String?>(null)
-
-    private val BOX_SIZE = 0.2
-
-    val boundingBox: BoundingBox
-        get() {
-            val lat = userLocation.latitude
-            val lng = userLocation.longitude
-
-            return BoundingBox(
-                Point(lat - BOX_SIZE, lng - BOX_SIZE),
-                Point(lat + BOX_SIZE, lng + BOX_SIZE)
+    fun searchByQuery(query: String?, onSuccess: () -> Unit = {},
+                      onLoading: () -> Unit = {},
+                      onFailure: (Exception) -> Unit = {}) {
+        searchVM.searchByQuery(query, visibleRegion, {
+            _searchResponse.value = Result.Success(
+                SearchResponseModel(
+                    it,
+                    query.orEmpty(),
+                    true
+                )
             )
-        }
-
-    val origin = MutableLiveData<Point?>(null)
-    val destination = MutableLiveData<Point?>(null)
-    val originAddress = MutableLiveData<String?>(null)
-    val destinationAddress = MutableLiveData<String?>(null)
-
-    val selectedObjectMetaDatas = MutableLiveData<GeoObjectMetadataModel?>(null)
-
-    val drivingRoutes = MutableLiveData<List<DrivingRoute>?>()
-    val massTransitRoutes = MutableLiveData<List<Route>?>()
-
-    var userAdded = false
-
-    val markerMode = MutableLiveData(MARKER_MODE.PLACE)
-    val directionMarkerType = MutableLiveData(DIRECTION_MARKER_TYPE.DESTINATION)
-
-    var cameraPosition: CameraPosition? = null
-
-
-    var directionShouldBeReload = false
-
-
-    val locationUpdateListener = object : LocationListener {
-        override fun onLocationStatusUpdated(p0: LocationStatus) {
-            Log.w(TAG, p0.toString())
-        }
-        override fun onLocationUpdated(location: Location) {
-            val lat = location.position.latitude
-            val lng = location.position.longitude
-
-            Log.w(TAG, "lat=${lat} " + "lon=${lng}")
-            lastKnownUserLocation = Point(userLocation.latitude, userLocation.longitude)
-            userLocation = location.position
-
-            directionShouldBeReload = lat != lastKnownUserLocation!!.latitude || lng != lastKnownUserLocation!!.longitude
-
-            //syncDirectionPoint()
-        }
-    }
-
-    private fun syncDirectionPoint() {
-        if(directionAction.value == DIRECTION_ACTION.BIND_MY_LOCATION) {
-            directionShouldBeReload = true
-            if(bindedMarkerType == DIRECTION_MARKER_TYPE.ORIGIN) {
-                origin.value = userLocation
-            } else if(bindedMarkerType == DIRECTION_MARKER_TYPE.DESTINATION) {
-                destination.value = userLocation
-            }
-        }
+            onSuccess()
+        }, {
+            _searchResponse.value = Result.Loading()
+            onLoading()
+        }, {
+            _searchResponse.value = Result.Failure(it)
+            onFailure(it)
+        })
     }
 
 
-    val directionAction = SingleLiveEvent<DIRECTION_ACTION>()
+    fun searchBySuggestion(
+        suggestion: SuggestItem,
+        onSuccess: () -> Unit,
+        onLoading: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        Log.w(TAG, "suggestion uri ${suggestion.uri}")
+        if(suggestion.uri != null)
+            searchVM.searchByUri(suggestion.uri!!, { metadata ->
 
-    var bindedMarkerType: DIRECTION_MARKER_TYPE? = null
-        private set
+                _searchResponse.value = Result.Success(
+                    SearchResponseModel(
+                        metadata.response,
+                        suggestion.displayText.orEmpty(),
+                        false
+                    )
+                )
 
-    fun applyDirectionAction(action: DIRECTION_ACTION, bindMarkerMode: DIRECTION_MARKER_TYPE? = null) {
-        Log.w(TAG, "applyDirectionAction $action")
-        if(action == DIRECTION_ACTION.BIND_MY_LOCATION) {
-            bindedMarkerType = bindMarkerMode ?: directionMarkerType.value
-        } else {
-            bindedMarkerType = null
-        }
-        directionAction.value = action
-        syncDirectionPoint()
-    }
-
-    var directionType = MutableLiveData(DIRECTION_TYPE.DRIVING)
-
-
-
-    private val searchManager = SearchFactory.getInstance().createSearchManager(
-        SearchManagerType.COMBINED)
-
-    private lateinit var searchSession: Session
-
-
-    private fun getSearchListener(onResponse: (Response) -> Unit, onFailure: (Error) -> Unit) = object: Session.SearchListener {
-        override fun onSearchResponse(response: Response) {
-            onResponse(response)
-        }
-
-        override fun onSearchError(error: Error) {
-            onFailure(error)
+                onSuccess()
+            }, {
+                _searchResponse.value = Result.Loading()
+                onLoading()
+            }, {
+                _searchResponse.value = Result.Failure(it)
+                onFailure(it)
+            })
+        else {
+            searchByQuery(suggestion.displayText, onSuccess, onLoading, onFailure)
         }
     }
-
-    private lateinit var searchByPointListener: Session.SearchListener
-    private lateinit var searchByQueryListener: Session.SearchListener
-
-
-    fun searchByPoint(point: Point, onResponse: (Response) -> Unit, onFailure: (Error) -> Unit) {
-        searchByPointListener = getSearchListener(onResponse, onFailure)
-        searchSession = searchManager.submit(
-            point,
-            cameraPosition?.zoom?.toInt(),
-            SearchOptions(),
-            searchByPointListener
-        )
-    }
-
-    fun searchByUri(uri: String, onResponse: (Response) -> Unit, onFailure: (Error) -> Unit) {
-        searchSession = searchManager.searchByURI(
-            uri,
-            SearchOptions().setGeometry(true).setSnippets(
-                Snippet.PANORAMAS.value or Snippet.BUSINESS_IMAGES.value or
-                        Snippet.BUSINESS_RATING1X.value or
-                        Snippet.PHOTOS.value
-            ),
-            object: Session.SearchListener {
-                override fun onSearchResponse(response: Response) {
-                    onResponse(response)
-                }
-
-                override fun onSearchError(error: Error) {
-                    onFailure(error)
-                }
-            }
-        )
-    }
-
-    fun submitQuery(query: String, geometry: Geometry, listener: Session.SearchListener) {
-        searchByQueryListener = listener
-        searchSession = searchManager.submit(
-            query,
-            geometry,
-            SearchOptions(),
-            searchByQueryListener
-        )
-    }
-
-
-    fun setDirectionMarkerByPoint(point: Point) {
-        directionShouldBeReload = true
-        if(directionMarkerType.value == DIRECTION_MARKER_TYPE.ORIGIN) {
-            origin.value = point
-        } else if(directionMarkerType.value == DIRECTION_MARKER_TYPE.DESTINATION) {
-            destination.value = point
-        }
-    }
-}*/
+}
 
 enum class MARKER_MODE {
     PLACE {
@@ -416,13 +318,3 @@ enum class DIRECTION_ACTION {
 enum class DIRECTION_TYPE {
     DRIVING, MASS_TRANSIT
 }
-
-
-data class GeoObjectMetadataModel(
-    val response: Response?,
-    val geoObject: GeoObject?,
-    val panoramasMetadata: PanoramasObjectMetadata?,
-    val imagesMetadata: BusinessImagesObjectMetadata?,
-    val photosMetadata: BusinessPhotoObjectMetadata?,
-    val generalMetadata: BusinessObjectMetadata,
-)

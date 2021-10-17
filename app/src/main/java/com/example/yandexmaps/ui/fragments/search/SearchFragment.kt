@@ -36,7 +36,7 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
     }
 
     private val mapsViewModel by sharedViewModel<MapsVM>()
-    private val viewModel by viewModel<SearchVM>()
+    private val viewModel by sharedViewModel<SearchVM>()
 
     private lateinit var suggestionsAdapter: SuggestionsAdapter
 
@@ -47,10 +47,6 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
     private val SEARCH_OPTIONS = SuggestOptions().setSuggestTypes(
         SuggestType.BIZ.value
     )
-
-
-    private lateinit var searchSession: Session
-
 
     private val voiceSearchActivityResultLauncher = registerForActivityResult(
         StartActivityForResult()
@@ -75,25 +71,15 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
 
         suggestionsAdapter = SuggestionsAdapter {
             Log.w(TAG, "suggestion uri ${it.uri}")
-            if(it.uri != null)
-                mapsViewModel.searchVM.searchByUri(it.uri!!, { metadata ->
+            mapsViewModel.searchBySuggestion(it, {
+                goBack()
+            }, {
 
-                    /*mapsViewModel.searchVM.searchResponse.value =
-                        SearchResponseModel(metadata.response, it.displayText.orEmpty(), false,1)*/
-                    /*val obj = response.collection.children.first().obj
-
-                    mapsViewModel.searchLayerQuery.value = null
-                    mapsViewModel.searchResponse.value = SearchResponseModel(response, it.displayText.orEmpty(), false,1)*/
-
-                    goBack()
-                }, {
-
-                }, {
-                    showSnackBar(it.toString())
-                })
-            else
-                showSearchLayer(it.displayText.orEmpty())
+            }, {
+                showSnackBar(it.message!!.toInt())
+            })
         }
+
         binding.suggestResult.adapter = suggestionsAdapter
 
         binding.suggestQuery.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
@@ -147,14 +133,6 @@ class SearchFragment: BaseFragment<FragmentSearchBinding>(FragmentSearchBinding:
                 Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
             }
         })
-    }
-
-
-
-    private fun showSearchLayer(query: String) {
-       /* mapsViewModel.searchResponse.value = null
-        mapsViewModel.searchLayerQuery.value = query*/
-        goBack()
     }
 
     private fun goBack() {

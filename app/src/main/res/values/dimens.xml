@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="base_indent">10dp</dimen>
+    <dimen name="medium_indent">12dp</dimen>
+    <dimen name="profile_photo_size">120dp</dimen>
+    <dimen name="big_textsize">20sp</dimen>
+    <dimen name="medium_textsize">16sp</dimen>
+    <dimen name="big_indent">14dp</dimen>
+    <dimen name="small_indent">6dp</dimen>
+    <dimen name="review_photo_size">50dp</dimen>
+    <dimen name="smaller_indent">4dp</dimen>
+    <dimen name="place_photo_size">150dp</dimen>
+    <dimen name="min_indent">2dp</dimen>
+    <dimen name="small_textsize">12sp</dimen>
+    <dimen name="base_textsize">14sp</dimen>
+    <dimen name="large_textsize">26sp</dimen>
+</resources>

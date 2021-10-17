@@ -1,13 +1,9 @@
-package com.example.yandexmaps.utils.extensions
+package com.example.yandexmaps.ui.fragments.main
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import com.example.yandexmaps.ui.fragments.main.AddressNotFind
-import com.example.yandexmaps.ui.fragments.main.GeoObjectMetadataModel
-import com.example.yandexmaps.ui.fragments.main.Result
-import com.example.yandexmaps.ui.models.SearchResponseModel
+import com.example.yandexmaps.ui.models.GeoObjectMetadataModel
 import com.example.yandexmaps.utils.Utils
+import com.yandex.mapkit.geometry.Geometry
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.search.*
 import com.yandex.runtime.Error
@@ -22,47 +18,67 @@ class SearchVM {
 
     private val searchManager = SearchFactory.getInstance().createSearchManager(SearchManagerType.COMBINED)
 
-    private var searchSession: Session? = null
+    private var querySearchSession: Session? = null
+    private var pointSearchSession: Session? = null
+    private var uriSearchSession: Session? = null
 
-    private val _searchResponse = MutableLiveData<Result<SearchResponseModel?>>()
-    val searchResponse: LiveData<Result<SearchResponseModel?>> = _searchResponse
+    fun searchByQuery(query: String?,
+                      geometry: Geometry,
+                      onSuccess: (Response) -> Unit,
+                      onLoading: () -> Unit,
+                      onFailure: (Exception) -> Unit) {
+
+        if(query == null) onFailure(Exception())
+
+        onLoading()
+        querySearchSession?.cancel()
+        querySearchSession = searchManager.submit(
+            query!!,
+            geometry,
+            SearchOptions(),
+            object: Session.SearchListener {
+                override fun onSearchResponse(response: Response) {
+                    onSuccess(response)
+                }
+
+                override fun onSearchError(error: Error) {
+                    val errorMessage = Utils.getErrorMessage(error)
+                    onFailure(Exception(errorMessage.toString()))
+                }
+            }
+        )
+    }
+
 
     fun searchByPoint(point: Point?, zoom: Int,
                       onSuccess: (Response) -> Unit,
                       onLoading: () -> Unit,
                       onFailure: (Exception) -> Unit
-    ): LiveData<Result<Response>> {
+    ) {
 
-        searchSession?.cancel()
-        val searchResponse = MutableLiveData<Result<Response>>()
+        pointSearchSession?.cancel()
 
         if(point == null) {
-            searchResponse.value = Result.Failure(AddressNotFind())
             onFailure(AddressNotFind())
         } else {
-            searchResponse.value = Result.Loading()
             onLoading()
 
-            searchSession = searchManager.submit(
+            pointSearchSession = searchManager.submit(
                 point,
                 zoom,
                 SearchOptions(),
                 object: Session.SearchListener {
                     override fun onSearchResponse(response: Response) {
-                        searchResponse.value = Result.Success(response)
                         onSuccess(response)
                     }
 
                     override fun onSearchError(error: Error) {
                         val errorMessage = Utils.getErrorMessage(error)
-                        searchResponse.value = Result.Failure(Exception(errorMessage.toString()))
                         onFailure(Exception(errorMessage.toString()))
                     }
                 }
             )
         }
-
-        return searchResponse
     }
 
     fun searchByUri(
@@ -70,17 +86,15 @@ class SearchVM {
         onSuccess: (GeoObjectMetadataModel) -> Unit,
         onLoading: () -> Unit,
         onFailure: (Exception) -> Unit
-    ): LiveData<Result<GeoObjectMetadataModel>> {
+    ) {
 
-        searchSession?.cancel()
-        val searchResponse = MutableLiveData<Result<GeoObjectMetadataModel>>()
+        uriSearchSession?.cancel()
 
         if(uri == null) {
-            searchResponse.value = Result.Failure(AddressNotFind())
             onFailure(AddressNotFind())
         } else {
             onLoading()
-            searchSession = searchManager.searchByURI(
+            uriSearchSession = searchManager.searchByURI(
                 uri,
                 SearchOptions().setGeometry(true).setSnippets(
                     Snippet.PANORAMAS.value or Snippet.BUSINESS_IMAGES.value or
@@ -107,22 +121,15 @@ class SearchVM {
                             photosMetadata,
                             metadata!!
                         )
-                        searchResponse.value = Result.Success(model)
                         onSuccess(model)
                     }
 
                     override fun onSearchError(error: Error) {
                         val errorMessage = Utils.getErrorMessage(error)
-                        searchResponse.value = Result.Failure(Exception(errorMessage.toString()))
+                        onFailure(Exception(errorMessage.toString()))
                     }
                 }
             )
         }
-
-        return searchResponse
-    }
-
-    fun clearSearch() {
-        _searchResponse.value = Result.Success(null)
     }
 }

@@ -4,18 +4,15 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.navigation.fragment.navArgs
-import com.example.yandexmaps.R
 import com.example.yandexmaps.args.toModel
 import com.example.yandexmaps.databinding.FragmentPanoramaBinding
 import com.example.yandexmaps.ui.fragments.base.BaseFragment
+import com.example.yandexmaps.utils.Utils
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.places.PlacesFactory
-import com.yandex.mapkit.places.panorama.NotFoundError
 import com.yandex.mapkit.places.panorama.PanoramaService
 import com.yandex.mapkit.places.panorama.PanoramaService.SearchSession
 import com.yandex.runtime.Error
-import com.yandex.runtime.network.NetworkError
-import com.yandex.runtime.network.RemoteError
 
 class PanoramaFragment: BaseFragment<FragmentPanoramaBinding>(FragmentPanoramaBinding::inflate),
     PanoramaService.SearchListener {
@@ -41,20 +38,7 @@ class PanoramaFragment: BaseFragment<FragmentPanoramaBinding>(FragmentPanoramaBi
     }
 
     override fun onPanoramaSearchError(error: Error) {
-        var errorMessage = getString(R.string.unknown_error_message)
-        when (error) {
-            is NotFoundError -> {
-                errorMessage = getString(R.string.not_found_error_message)
-            }
-            is RemoteError -> {
-                errorMessage = getString(R.string.remote_error_message)
-            }
-            is NetworkError -> {
-                errorMessage = getString(R.string.network_error_message)
-            }
-        }
-
-        Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), Utils.getErrorMessage(error), Toast.LENGTH_SHORT).show()
     }
 
 

@@ -2,47 +2,23 @@ package com.example.yandexmaps.ui.helpers
 
 import android.graphics.Color
 import android.util.Log
-import android.widget.Toast
-import com.example.yandexmaps.R
-import com.yandex.mapkit.RequestPoint
-import com.yandex.mapkit.RequestPointType
-import com.yandex.mapkit.directions.DirectionsFactory
-import com.yandex.mapkit.directions.driving.DrivingOptions
 import com.yandex.mapkit.directions.driving.DrivingRoute
-import com.yandex.mapkit.directions.driving.DrivingSession
-import com.yandex.mapkit.directions.driving.VehicleOptions
-import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.geometry.Polyline
 import com.yandex.mapkit.geometry.SubpolylineHelper
-import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.mapview.MapView
-import com.yandex.mapkit.transport.TransportFactory
-import com.yandex.mapkit.transport.masstransit.*
+import com.yandex.mapkit.transport.masstransit.Route
 import com.yandex.mapkit.transport.masstransit.SectionMetadata.SectionData
-import com.yandex.runtime.Error
-import com.yandex.runtime.network.NetworkError
-import com.yandex.runtime.network.RemoteError
+import com.yandex.mapkit.transport.masstransit.Transport
 import java.util.*
 
-class DirectionHelper(private val mapView: MapView) {
+class DirectionHelper(mapView: MapView) {
 
     companion object {
         private const val TAG = "DirectionHelper"
     }
 
-    private val drivingRouter = DirectionsFactory.getInstance().createDrivingRouter()
-    private lateinit var drivingSession: DrivingSession
-
-    private var onDrivingRoutesCallback: (List<DrivingRoute>) -> Unit = {}
-    private var onDrivingErrorCallback: (Error) -> Unit = {}
-
-    private var onMassRoutesCallback: (List<Route>) -> Unit = {}
-    private var onMassErrorCallback: (Error) -> Unit = {}
-
     private val drivingRouteCollection = mapView.map.mapObjects.addCollection()
     private val massTransitRouteCollection = mapView.map.mapObjects.addCollection()
-
-    private val mtRouter = TransportFactory.getInstance().createMasstransitRouter()
 
     fun updateVisibility(isVisible: Boolean) {
         drivingRouteCollection.isVisible = isVisible
@@ -54,38 +30,15 @@ class DirectionHelper(private val mapView: MapView) {
         massTransitRouteCollection.clear()
     }
 
-    fun drawDrivingRoutes(routes: List<DrivingRoute>) {
-        clearRoutes()
-
-        for (route in routes) {
-            drivingRouteCollection.addPolyline(route.geometry)
-        }
-    }
     fun drawDrivingRoutes(route: DrivingRoute) {
         clearRoutes()
         drivingRouteCollection.addPolyline(route.geometry)
     }
 
-    fun drawMassTransitRoutes(routes: List<Route>) {
-        clearRoutes()
-
-        if (routes.isNotEmpty()) {
-            for (section in routes[0].sections) {
-                if (section.stops.size > 0) Log.e("asd", "stop" + section.stops[0].stop.name)
-                drawSection(
-                    section.metadata.data,
-                    SubpolylineHelper.subpolyline(
-                        routes[0].geometry, section.geometry
-                    )
-                )
-            }
-        }
-    }
     fun drawMassTransitRoutes(route: Route) {
         clearRoutes()
 
         for (section in route.sections) {
-            if (section.stops.size > 0) Log.e("asd", "stop" + section.stops[0].stop.name)
             drawSection(
                 section.metadata.data,
                 SubpolylineHelper.subpolyline(
@@ -93,99 +46,6 @@ class DirectionHelper(private val mapView: MapView) {
                 )
             )
         }
-    }
-
-
-    private val drivingRouteListener = object: DrivingSession.DrivingRouteListener {
-        override fun onDrivingRoutes(routes: MutableList<DrivingRoute>) {
-            drawDrivingRoutes(routes)
-            onDrivingRoutesCallback(routes)
-        }
-
-        override fun onDrivingRoutesError(error: Error) {
-            val errorMessage = mapView.context.getString(
-                when(error) {
-                    is RemoteError -> R.string.remote_error_message
-                    is NetworkError -> R.string.network_error_message
-                    else -> R.string.unknown_error_message
-                }
-            )
-
-            onDrivingErrorCallback(error)
-        }
-    }
-
-    private val mtRouteListener = object: Session.RouteListener {
-        override fun onMasstransitRoutes(routes: MutableList<Route>) {
-            // In this example we consider first alternative only
-            drawMassTransitRoutes(routes)
-            onMassRoutesCallback(routes)
-        }
-
-        override fun onMasstransitRoutesError(error: Error) {
-            val errorMessage = mapView.context.getString(
-                when(error) {
-                    is RemoteError -> R.string.remote_error_message
-                    is NetworkError -> R.string.network_error_message
-                    else -> R.string.unknown_error_message
-                }
-            )
-
-            Toast.makeText(mapView.context, errorMessage, Toast.LENGTH_SHORT).show()
-
-            onMassErrorCallback(error)
-        }
-
-    }
-
-
-    fun submitDrivingRequest(
-        start: Point, end: Point,
-        onDrivingRoutesCallback: (List<DrivingRoute>) -> Unit,
-        onErrorCallback: (Error) -> Unit,
-    ) {
-        this.onDrivingRoutesCallback = onDrivingRoutesCallback
-        this.onDrivingErrorCallback = onErrorCallback
-
-        val drivingOptions = DrivingOptions().setRoutesCount(1)
-        val vehicleOptions = VehicleOptions()
-        val requestPoints = ArrayList<RequestPoint>(2)
-        requestPoints.add(
-            RequestPoint(
-                start,
-                RequestPointType.WAYPOINT,
-                null
-            )
-        )
-        requestPoints.add(
-            RequestPoint(
-                end,
-                RequestPointType.WAYPOINT,
-                null
-            )
-        )
-        drivingSession =
-            drivingRouter.requestRoutes(requestPoints, drivingOptions, vehicleOptions, drivingRouteListener)
-    }
-
-
-    fun submitMassTransitRequest(
-        start: Point, end: Point,
-        onMassRoutesCallback: (List<Route>) -> Unit,
-        onMassErrorCallback: (Error) -> Unit,
-    ) {
-        this.onMassRoutesCallback = onMassRoutesCallback
-        this.onMassErrorCallback = onMassErrorCallback
-
-        val options = MasstransitOptions(
-            ArrayList(),
-            ArrayList(),
-            TimeOptions()
-        )
-        val points = ArrayList<RequestPoint>(2)
-        points.add(RequestPoint(start, RequestPointType.WAYPOINT, null))
-        points.add(RequestPoint(end, RequestPointType.WAYPOINT, null))
-        mtRouter.requestRoutes(points, options, mtRouteListener)
     }
 
     private fun drawSection(

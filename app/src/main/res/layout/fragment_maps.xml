@@ -138,12 +138,11 @@
         android:id="@+id/panoramaButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
         android:clickable="true"
         android:focusable="true"
         app:backgroundTint="@color/white"
-        app:layout_constraintEnd_toEndOf="@id/myLocationButton"
-        app:layout_constraintBottom_toTopOf="@id/myLocationButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="parent"
         app:srcCompat="@drawable/ic_baseline_panorama_24" />
 
 </com.example.yandexmaps.ui.custom.SavingMotionLayout>

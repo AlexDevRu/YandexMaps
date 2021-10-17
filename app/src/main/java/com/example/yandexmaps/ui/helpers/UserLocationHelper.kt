@@ -12,12 +12,14 @@ import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
 import com.yandex.runtime.image.ImageProvider
 
-class UserLocationHelper(private val mapView: MapView) {
+class UserLocationHelper(private val mapView: MapView, onObjectAdded: () -> Boolean) {
 
-    private var userLocationLayer = MapKitFactory.getInstance().createUserLocationLayer(mapView.mapWindow)
+    private val userLocationLayer = MapKitFactory.getInstance().createUserLocationLayer(mapView.mapWindow)
 
     private val objectListener = object: UserLocationObjectListener {
         override fun onObjectAdded(userLocationView: UserLocationView) {
+
+            if(onObjectAdded()) return
 
             val width = mapView.width()
             val height = mapView.height()

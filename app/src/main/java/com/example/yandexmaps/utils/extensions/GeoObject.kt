@@ -5,5 +5,5 @@ import com.yandex.mapkit.uri.UriObjectMetadata
 
 fun GeoObject.uri(): String? {
     val metadata = metadataContainer.getItem(UriObjectMetadata::class.java)
-    return metadata.uris.firstOrNull()?.value
+    return metadata?.uris?.firstOrNull()?.value
 }
